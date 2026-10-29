@@ -117,6 +117,8 @@ Whichever you pick, give the agent the rules in your `handoff.md` and tell it to
 | Agent | Status |
 | --- | --- |
 | Bundled stand-in (`stand-in` command) | Tested on every change |
+| Operating systems and shells | Tests run on Linux, macOS and Windows on every change. The quick start runs under bash and zsh on Linux and macOS, and in Windows PowerShell 5.1 by hand |
+| Cursor, VS Code (Copilot), Claude Desktop, Codex | The config examples in [docs/clients.md](docs/clients.md) are launched by a test and complete an MCP handshake. The editors themselves are not run in CI |
 | One real cloud agent, over git and email | Tested once (2026-10-26, five rounds) |
 | Any other agent that can read markdown files in a folder or repository | Expected to work, not tested. [docs/live-acceptance.md](docs/live-acceptance.md) is the checklist for trying yours |
 
