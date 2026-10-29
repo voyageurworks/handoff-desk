@@ -2,6 +2,8 @@
 
 ## 0.1.0 (unreleased)
 
+- Documentation: rewritten README with a five-minute quick start, per-client setup (Claude Code, Cursor, VS Code, Codex, Claude Desktop, others), architecture, troubleshooting and FAQ; a test keeps the examples and links valid.
+
 - Community files: issue and pull request templates, code of conduct.
 
 - `handoff_read` on a number that two notes share shows the older note and a `warning` naming the other.
