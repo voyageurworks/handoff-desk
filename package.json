@@ -1,0 +1,28 @@
+{
+  "name": "handoff-desk",
+  "version": "0.1.0",
+  "description": "Hand tasks from Claude Code or Cursor to a personal agent that reads a folder of markdown notes.",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "handoff-desk": "dist/main.js" },
+  "files": ["dist", "templates", "docs", "README.md", "LICENSE"],
+  "engines": { "node": ">=22" },
+  "keywords": ["mcp", "model-context-protocol", "agent", "handoff", "claude-code", "cursor"],
+  "scripts": {
+    "build": "tsc -p .",
+    "check": "tsc -p . --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm check && pnpm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "nodemailer": "^10.0.16",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

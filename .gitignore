@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.env
+mail/
+.superpowers/
+.guard-words
