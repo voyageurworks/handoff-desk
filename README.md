@@ -37,32 +37,49 @@ More detail, including the folder layout and the git flow, is in [docs/architect
 
 ## Quick start (5 minutes, no real agent needed)
 
-You need Node 22 or newer, [pnpm](https://pnpm.io) (or npm) and git.
+You need [Node.js](https://nodejs.org) 22 or newer (this includes npm) and git. [pnpm](https://pnpm.io) works too.
+
+**1. Install and build** (macOS, Linux and Windows):
 
 ```sh
 git clone <this repository's URL> handoff-desk
 cd handoff-desk
-pnpm install && pnpm build
+npm install
+npm run build
+```
+
+With pnpm: `pnpm install && pnpm build`.
+
+**2. Create a demo desk.** `init` creates `Desk/`, `Inbox/`, `mail/` and a `handoff.md` template. Running it again never overwrites your edits.
+
+```sh
 node dist/main.js init ~/handoff-demo
 ```
 
-`init` creates `Desk/`, `Inbox/`, `mail/` and a `handoff.md` template inside `~/handoff-demo`. Running it again never overwrites your edits.
-
-Add the server to Claude Code (other clients: [docs/clients.md](docs/clients.md)). Use an absolute path:
+**3. Add the server to Claude Code** (other clients: [docs/clients.md](docs/clients.md)). Use the absolute path to `dist/main.js` (on Windows with forward slashes, for example `C:/Users/you/handoff-desk/dist/main.js`):
 
 ```sh
-claude mcp add handoff -e HANDOFF_DIR="$HOME/handoff-demo" -- node /absolute/path/to/handoff-desk/dist/main.js
+claude mcp add handoff-demo -e HANDOFF_DIR="$HOME/handoff-demo" -- node /absolute/path/to/handoff-desk/dist/main.js
 ```
 
-In a second terminal, start the built-in stand-in agent. It answers every waiting item with a fixed line:
+**4. Start the stand-in agent** in a second terminal and leave it running. It answers every waiting item with a fixed line. In macOS or Linux shells:
 
 ```sh
+cd handoff-desk
 HANDOFF_DIR="$HOME/handoff-demo" node dist/main.js stand-in
 ```
 
-Now, in Claude Code, say: **"Hand this to my agent as a question: reply with pong."** Claude calls `handoff_send`, then `handoff_wait`, and shows the stand-in's reply. Open `~/handoff-demo/Desk/` to see the note flip from `status: waiting` to `status: done`.
+In Windows PowerShell:
 
-When you are done: `claude mcp remove handoff`.
+```powershell
+cd handoff-desk
+$env:HANDOFF_DIR = "$HOME/handoff-demo"
+node dist/main.js stand-in
+```
+
+**5. Try it.** Start a new Claude Code session (servers load at startup) and say: **"Hand this to my agent as a question using the handoff-demo tools: reply with pong."** Claude calls `handoff_send`, then `handoff_wait`, and shows the stand-in's reply. Open `~/handoff-demo/Desk/` to see the note flip from `status: waiting` to `status: done`.
+
+**6. Clean up.** Stop the stand-in (Ctrl+C) and run `claude mcp remove handoff-demo`. Delete `~/handoff-demo` if you like.
 
 Something not working? See [docs/troubleshooting.md](docs/troubleshooting.md).
 

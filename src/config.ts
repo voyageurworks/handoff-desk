@@ -25,15 +25,23 @@ export type HandoffConfig = {
   tz?: string;
 };
 
+/** A leading "~" means the home folder. Shells like PowerShell and cmd, and JSON client configs, do not expand it themselves. */
+export function expandHome(p: string): string {
+  if (p === "~") return os.homedir();
+  if (p.startsWith("~/") || p.startsWith("~" + String.fromCharCode(92))) return path.join(os.homedir(), p.slice(2));
+  return p;
+}
+
 /** Settings from the file named by HANDOFF_ENV_FILE, so a mail password need not sit in the MCP client's own config. Real environment values win. */
 function withEnvFile(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   if (!env.HANDOFF_ENV_FILE) return env;
+  const file = expandHome(env.HANDOFF_ENV_FILE);
   try {
-    return { ...parseEnv(readFileSync(env.HANDOFF_ENV_FILE, "utf8")), ...env };
+    return { ...parseEnv(readFileSync(file, "utf8")), ...env };
   } catch {
     // A missing or unreadable file is no reason to fail the server; the settings are simply absent. The path (never its
     // contents) goes to stderr so a typo isn't mistaken for "mail not configured". stdout belongs to the MCP protocol.
-    console.error(`handoff-desk: could not read HANDOFF_ENV_FILE ${env.HANDOFF_ENV_FILE}`);
+    console.error(`handoff-desk: could not read HANDOFF_ENV_FILE ${file}`);
     return env;
   }
 }
@@ -46,14 +54,14 @@ export function syncEnv(config: HandoffConfig, base: NodeJS.ProcessEnv = process
 /** Settings come from the environment (set in the MCP client's config) and, if HANDOFF_ENV_FILE names one, a private file. Nothing is printed, so stdout stays clean. */
 export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConfig {
   const env = withEnvFile(rawEnv);
-  const dir = env.HANDOFF_DIR || path.join(os.homedir(), "handoff");
+  const dir = env.HANDOFF_DIR ? expandHome(env.HANDOFF_DIR) : path.join(os.homedir(), "handoff");
   const port = env.HANDOFF_SMTP_PORT ? Number(env.HANDOFF_SMTP_PORT) : undefined;
   const mode = (env.HANDOFF_SYNC || "auto").toLowerCase();
   return {
     dir,
     desk: { deskDir: path.join(dir, "Desk") },
     doorbell: { user: env.HANDOFF_MAIL_USER, pass: env.HANDOFF_MAIL_APP_PASSWORD, passCommand: env.HANDOFF_MAIL_PASSWORD_COMMAND, to: env.HANDOFF_MAIL_TO, host: env.HANDOFF_SMTP_HOST, port: Number.isInteger(port) ? port : undefined },
-    mailDir: env.HANDOFF_MAIL_DIR || path.join(dir, "mail"),
+    mailDir: env.HANDOFF_MAIL_DIR ? expandHome(env.HANDOFF_MAIL_DIR) : path.join(dir, "mail"),
     inboxDir: env.HANDOFF_INBOX_DIR || "Inbox",
     sync: mode === "git" || mode === "off" ? mode : "auto",
     remote: env.HANDOFF_REMOTE || undefined,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { loadConfig, syncEnv } from "./config.js";
+import { expandHome, loadConfig, syncEnv } from "./config.js";
 import { initDesk } from "./init.js";
 import { buildServer } from "./server.js";
 import { runStandIn } from "./standin.js";
@@ -26,7 +26,7 @@ async function resolveSync(): Promise<SyncHandle | null> {
 if (command === undefined) {
   await buildServer(config, resolveSync).connect(new StdioServerTransport());
 } else if (command === "init") {
-  const dir = rest[0] ?? config.dir;
+  const dir = rest[0] ? expandHome(rest[0]) : config.dir;
   const { created, kept } = await initDesk(dir, { inboxDir: config.inboxDir });
   const inRepo = await git(dir, ["rev-parse", "--is-inside-work-tree"]).then(() => true, () => false);
   console.log(`Desk folder: ${dir}\nCreated: ${created.join(", ") || "nothing"}\nKept as it was: ${kept.join(", ") || "nothing"}\nNext: edit ${dir}/handoff.md, then add the server to your MCP client.${inRepo ? "\nThis folder is in a git repository: keep that repository PRIVATE, because desk notes are pushed to its remote." : ""}`);

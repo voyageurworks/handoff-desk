@@ -8,7 +8,7 @@
 | Arguments | the absolute path to `dist/main.js` in your clone (for example `/home/you/handoff-desk/dist/main.js`; on Windows write `C:/Users/you/handoff-desk/dist/main.js` with forward slashes) |
 | Environment | `HANDOFF_DIR`, the desk folder (see [the settings table](../README.md#settings) for the rest) |
 
-Build first (`pnpm install && pnpm build`) and create the desk (`node dist/main.js init <desk folder>`). Restart the client after changing its config. The formats below were checked in October 2026; if your client's version differs, its own MCP documentation wins.
+Build first (`npm install && npm run build`, or the pnpm equivalent) and create the desk (`node dist/main.js init <desk folder>`). Restart the client after changing its config. The formats below were checked in October 2026; if your client's version differs, its own MCP documentation wins.
 
 Keep secrets such as the mail app password out of these files: use `HANDOFF_ENV_FILE` or `HANDOFF_MAIL_PASSWORD_COMMAND` ([keeping-secrets.md](keeping-secrets.md)).
 

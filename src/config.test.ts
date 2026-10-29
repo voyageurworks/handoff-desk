@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { loadConfig, syncEnv } from "./config.js";
+import { expandHome, loadConfig, syncEnv } from "./config.js";
 
 // A password in the MCP client's own config sits there as plain text; a private file keeps it out.
 describe("HANDOFF_ENV_FILE", () => {
@@ -53,5 +53,30 @@ describe("HANDOFF_ENV_FILE", () => {
     loadConfig({ HANDOFF_ENV_FILE: missing });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining(missing));
     warn.mockRestore();
+  });
+});
+
+// PowerShell and cmd do not expand "~", and a JSON client config never does: without this a new user gets a folder literally named "~".
+describe("leading ~ in paths", () => {
+  it("expands ~ at the start of a path (both slash styles) and leaves other paths alone", () => {
+    const home = os.homedir();
+    expect(expandHome("~")).toBe(home);
+    expect(expandHome("~/desk")).toBe(path.join(home, "desk"));
+    expect(expandHome("~" + String.fromCharCode(92) + "desk")).toBe(path.join(home, "desk"));
+    expect(expandHome("/abs/desk")).toBe("/abs/desk");
+    expect(expandHome("~other/desk")).toBe("~other/desk");
+    expect(expandHome("a/~/b")).toBe("a/~/b");
+  });
+
+  it("applies to the desk folder, the mail folder and the settings file", async () => {
+    const home = os.homedir();
+    const config = loadConfig({ HANDOFF_DIR: "~/desk", HANDOFF_MAIL_DIR: "~/mailcopies" });
+    expect(config.dir).toBe(path.join(home, "desk"));
+    expect(config.desk.deskDir).toBe(path.join(home, "desk", "Desk"));
+    expect(config.mailDir).toBe(path.join(home, "mailcopies"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    loadConfig({ HANDOFF_ENV_FILE: "~/no-such-settings.env" });
+    expect(spy.mock.calls.join(" ")).toContain(path.join(home, "no-such-settings.env"));
+    spy.mockRestore();
   });
 });

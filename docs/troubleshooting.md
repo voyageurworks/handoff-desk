@@ -2,7 +2,7 @@
 
 ## The client shows no handoff tools
 
-- Did you build? Run `pnpm install && pnpm build` and check that `dist/main.js` exists.
+- Did you build? Run `npm install && npm run build` (or the pnpm equivalent) and check that `dist/main.js` exists.
 - Is the path in the config **absolute** and correct? Relative paths break when the client starts from another folder. On Windows use forward slashes.
 - Is Node 22 or newer on the client's `PATH`? Run `node --version`. A client started from a launcher may not see the Node you use in a terminal; put the full path to `node` in the command if needed.
 - Restart the client after editing its config. Claude Code: `claude mcp list` shows whether the server connected.
