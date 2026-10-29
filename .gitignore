@@ -4,3 +4,11 @@ dist/
 mail/
 .superpowers/
 .guard-words
+.env.*
+*.log
+coverage/
+.vitest/
+*.tgz
+.DS_Store
+Thumbs.db
+.build-lock
