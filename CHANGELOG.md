@@ -2,6 +2,8 @@
 
 ## 0.1.0 (unreleased)
 
+- Community files: issue and pull request templates, code of conduct.
+
 - `handoff_read` on a number that two notes share shows the older note and a `warning` naming the other.
 - The tool result of `handoff_send` now says (`emailCopyError`) when the local copy of the email could not be saved, instead of staying silent.
 - When git has no name or email configured anywhere, the desk commits as `handoff-desk` instead of failing.
