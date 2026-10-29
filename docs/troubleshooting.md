@@ -7,6 +7,14 @@
 - Is Node 22 or newer on the client's `PATH`? Run `node --version`. A client started from a launcher may not see the Node you use in a terminal; put the full path to `node` in the command if needed.
 - Restart the client after editing its config. Claude Code: `claude mcp list` shows whether the server connected.
 
+## `claude mcp add` says "missing required argument"
+
+You are probably in Windows PowerShell 5.1, which drops a bare `--`. Write it in quotes: `claude mcp add handoff -e HANDOFF_DIR="$HOME/handoff" '--' node C:/path/to/handoff-desk/dist/main.js`. On macOS and Linux shells the bare `--` is fine.
+
+## A folder named `~` appeared
+
+PowerShell, Command Prompt and JSON client configs do not expand a leading `~`. `handoff-desk` expands it itself in `HANDOFF_DIR`, `HANDOFF_MAIL_DIR`, `HANDOFF_ENV_FILE` and the `init` argument, so a stray `~` folder usually came from another tool. Delete it and use an absolute path there.
+
 ## `handoff_wait` times out
 
 This is normal when the agent has not answered yet: the call waits up to 50 seconds. Call it again, or read the item later with `handoff_read`.

@@ -18,6 +18,12 @@ Keep secrets such as the mail app password out of these files: use `HANDOFF_ENV_
 claude mcp add handoff -e HANDOFF_DIR="$HOME/handoff" -- node /absolute/path/to/handoff-desk/dist/main.js
 ```
 
+In Windows PowerShell 5.1 write the double dash in quotes, because PowerShell drops a bare `--`:
+
+```powershell
+claude mcp add handoff -e HANDOFF_DIR="$HOME/handoff" '--' node C:/absolute/path/to/handoff-desk/dist/main.js
+```
+
 Check with `claude mcp list`. Remove with `claude mcp remove handoff`. Add `--scope user` to make it available in every project.
 
 ## Cursor
@@ -61,7 +67,7 @@ With the Codex CLI:
 codex mcp add handoff --env HANDOFF_DIR=/absolute/path/to/your/desk -- node /absolute/path/to/handoff-desk/dist/main.js
 ```
 
-Or edit `~/.codex/config.toml` (the CLI and the IDE extension share it):
+In Windows PowerShell 5.1 write the double dash in quotes (`'--'`), as for Claude Code above. Or edit `~/.codex/config.toml` (the CLI and the IDE extension share it):
 
 ```toml
 [mcp_servers.handoff]

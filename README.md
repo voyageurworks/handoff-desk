@@ -62,6 +62,12 @@ node dist/main.js init ~/handoff-demo
 claude mcp add handoff-demo -e HANDOFF_DIR="$HOME/handoff-demo" -- node /absolute/path/to/handoff-desk/dist/main.js
 ```
 
+In **Windows PowerShell 5.1**, write the double dash in quotes. PowerShell drops a bare `--`, and `claude` then reports `missing required argument 'commandOrUrl'`:
+
+```powershell
+claude mcp add handoff-demo -e HANDOFF_DIR="$HOME/handoff-demo" '--' node C:/absolute/path/to/handoff-desk/dist/main.js
+```
+
 **4. Start the stand-in agent** in a second terminal and leave it running. It answers every waiting item with a fixed line. In macOS or Linux shells:
 
 ```sh
