@@ -12,3 +12,6 @@ coverage/
 .DS_Store
 Thumbs.db
 .build-lock
+
+# Stray PowerShell caches from sandboxed test runs
+Microsoft/
