@@ -38,7 +38,7 @@ const SEND_DESCRIPTION = "Hand a task to the user's personal agent. It lands as 
 export type SyncSource = SyncHandle | null | Error | (() => Promise<SyncHandle | null>);
 
 export function buildServer(config: HandoffConfig, syncSource: SyncSource = null): McpServer {
-  const server = new McpServer({ name: "handoff", version: "0.1.0" });
+  const server = new McpServer({ name: "handoff", version: "1.0.0" });
 
   type Context = { desk: Desk; sync: SyncHandle | undefined };
   let pending: Promise<Context> | undefined;

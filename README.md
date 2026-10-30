@@ -14,7 +14,7 @@
 - **Safe by default.** Requests that look like they contain a password or key are refused, git transports are restricted, and text from the agent is marked as untrusted.
 - **Reviewable.** Every task and answer is a note you can read, diff and delete.
 
-> Status: early (0.1). Tested with the bundled stand-in agent and, on 2026-10-26, with one real cloud agent over git and email (five acceptance rounds, all passed). See [Compatibility](#compatibility).
+> Status: 1.0. Tested with the bundled stand-in agent and, on 2026-10-26, with one real cloud agent over git and email (five acceptance rounds, all passed). See [Compatibility](#compatibility).
 
 ## How it works
 
@@ -42,7 +42,7 @@ You need [Node.js](https://nodejs.org) 22 or newer (this includes npm) and git. 
 **1. Install and build** (macOS, Linux and Windows):
 
 ```sh
-git clone <this repository's URL> handoff-desk
+git clone https://github.com/handoffdesk/handoff-desk.git
 cd handoff-desk
 npm install
 npm run build
@@ -173,7 +173,7 @@ The [quick start](#quick-start-5-minutes-no-real-agent-needed) uses the stand-in
 
 ## Limits
 
-- There is no hosted mode and no push notification in 0.1. A cloud agent reaches the desk through git (see above); nothing else carries its reply back.
+- There is no hosted mode and no push notification in 1.0. A cloud agent reaches the desk through git (see above); nothing else carries its reply back.
 - The agent must be able to read the desk (folder, or git repository) or the doorbell email, and to write its reply into the note (and push it, for a cloud agent). If it cannot, `handoff_wait` times out.
 - Nothing here is instant: the agent has to notice the note or email, do the task, and push.
 - One real cloud agent has been tried so far (five rounds on 2026-10-26: an errand, a question, a status line, a request that needed approval and was declined, and a page with an injected instruction that was ignored). Other agents are untested. [docs/live-acceptance.md](docs/live-acceptance.md) is the checklist for trying yours.
