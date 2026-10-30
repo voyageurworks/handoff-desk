@@ -14,7 +14,7 @@
 - **Safe by default.** Requests that look like they contain a password or key are refused, git transports are restricted, and text from the agent is marked as untrusted.
 - **Reviewable.** Every task and answer is a note you can read, diff and delete.
 
-> Status: 1.0. Tested with the bundled stand-in agent and, on 2026-10-26, with one real cloud agent over git and email (five acceptance rounds, all passed). See [Compatibility](#compatibility).
+> Status: 1.0. The tools and the note format are stable. Agent coverage is narrow: it is tested on every change with the bundled stand-in agent, and was tried with one real cloud agent over git and email (five rounds on 2026-10-26, all passed). Other agents are untested. See [Compatibility](#compatibility).
 
 ## How it works
 
@@ -119,7 +119,7 @@ Whichever you pick, give the agent the rules in your `handoff.md` and tell it to
 | Bundled stand-in (`stand-in` command) | Tested on every change |
 | Operating systems and shells | Tests run on Linux, macOS and Windows on every change. The quick start runs under bash and zsh on Linux and macOS, and in Windows PowerShell 5.1 by hand |
 | Cursor, VS Code (Copilot), Claude Desktop, Codex | The config examples in [docs/clients.md](docs/clients.md) are launched by a test and complete an MCP handshake. The editors themselves are not run in CI |
-| One real cloud agent, over git and email | Tested once (2026-10-26, five rounds) |
+| One real cloud agent, over git and email | Five rounds passed on 2026-10-26. A re-run the next day without the email doorbell was only partly answered, because that agent checks the desk on a schedule; with the doorbell on it is expected to react sooner but that has not been re-tested |
 | Any other agent that can read markdown files in a folder or repository | Expected to work, not tested. [docs/live-acceptance.md](docs/live-acceptance.md) is the checklist for trying yours |
 
 ## Use
@@ -176,7 +176,7 @@ The [quick start](#quick-start-5-minutes-no-real-agent-needed) uses the stand-in
 - There is no hosted mode and no push notification in 1.0. A cloud agent reaches the desk through git (see above); nothing else carries its reply back.
 - The agent must be able to read the desk (folder, or git repository) or the doorbell email, and to write its reply into the note (and push it, for a cloud agent). If it cannot, `handoff_wait` times out.
 - Nothing here is instant: the agent has to notice the note or email, do the task, and push.
-- One real cloud agent has been tried so far (five rounds on 2026-10-26: an errand, a question, a status line, a request that needed approval and was declined, and a page with an injected instruction that was ignored). Other agents are untested. [docs/live-acceptance.md](docs/live-acceptance.md) is the checklist for trying yours.
+- One real cloud agent has been tried so far (five rounds on 2026-10-26: an errand, a question, a status line, a request that needed approval and was declined, and a page with an injected instruction that was ignored). Without the email doorbell, an agent that only checks the desk on a schedule answers late or not within `handoff_wait`'s 50 seconds. Other agents are untested. [docs/live-acceptance.md](docs/live-acceptance.md) is the checklist for trying yours.
 - On a network that swallows packets, one git step can take up to a minute before it gives up, so a call can run longer than your client allows. Run it again: nothing is lost, and a note that was committed goes up with the next call.
 - If two senders file the same item number at the same moment, the one that pushes second renames its own note. For a short time the remote can hold both under one number; `handoff_read` then shows the older note with a `warning`.
 - Notes are plain text on your disk and, with git, in your repository's history; anyone with access can read them.
