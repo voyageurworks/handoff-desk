@@ -42,7 +42,7 @@ You need [Node.js](https://nodejs.org) 22 or newer (this includes npm) and git. 
 **1. Install and build** (macOS, Linux and Windows):
 
 ```sh
-git clone https://github.com/handoffdesk/handoff-desk.git
+git clone https://github.com/voyageurworks/handoff-desk.git
 cd handoff-desk
 npm install
 npm run build
