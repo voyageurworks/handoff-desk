@@ -1,5 +1,5 @@
 {
-  "name": "handoff-desk",
+  "name": "@voyageurworks/handoff-desk",
   "version": "1.0.0",
   "description": "Hand tasks from Claude Code or Cursor to a personal agent that reads a folder of markdown notes.",
   "license": "MIT",
@@ -7,6 +7,7 @@
   "homepage": "https://github.com/voyageurworks/handoff-desk#readme",
   "bugs": { "url": "https://github.com/voyageurworks/handoff-desk/issues" },
   "type": "module",
+  "publishConfig": { "access": "public" },
   "bin": { "handoff-desk": "dist/main.js" },
   "files": ["dist", "templates", "docs", "README.md", "LICENSE"],
   "engines": { "node": ">=22" },

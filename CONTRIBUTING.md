@@ -12,3 +12,5 @@ Rules the tests enforce:
 Keep the server vendor-neutral: anything specific to one agent belongs in configuration (subject prefix, inbox folder), not in code.
 
 By taking part you agree to the [code of conduct](CODE_OF_CONDUCT.md). Report security problems as described in [SECURITY.md](SECURITY.md), not in a public issue.
+
+Maintainers: see [docs/releasing.md](docs/releasing.md) for how releases are published.
