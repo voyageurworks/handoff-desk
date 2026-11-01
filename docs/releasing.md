@@ -13,6 +13,8 @@ Maintainer notes. Releases publish to npm as `@voyageurworks/handoff-desk` from 
    ```
 4. On npmjs.com open the package, Settings, Trusted Publisher, and choose GitHub Actions: organization `voyageurworks`, repository `handoff-desk`, workflow `release.yml`. From then on no npm token is needed.
 
+The `Release` workflow skips publishing, with a notice, when npm already has the tagged version. That keeps the GitHub release for the hand-published first version from failing.
+
 ## Each release
 
 1. Update `version` in `package.json` and the date in `CHANGELOG.md`, commit, and wait for CI to pass on `main`.

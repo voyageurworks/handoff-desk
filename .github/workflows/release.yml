@@ -21,9 +21,30 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: The release tag must match package.json
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
-      - run: npm install --global pnpm@10
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm build
-      - run: pnpm test
-      - run: npm publish --provenance --access public
+      # The first version is published by hand (trusted publishing needs an existing package). A release for it must not
+      # fail: when npm already has this exact version, say so and skip every step below. A failed lookup counts as "not published".
+      - name: Is this version already on npm?
+        id: published
+        run: |
+          if npm view "@voyageurworks/handoff-desk@$(node -p "require('./package.json').version")" version > /dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::This version is already on npm (published by hand), so there is nothing to publish."
+          fi
+      - name: Install pnpm
+        if: steps.published.outputs.already != 'true'
+        run: npm install --global pnpm@10
+      - name: Install dependencies
+        if: steps.published.outputs.already != 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Type check
+        if: steps.published.outputs.already != 'true'
+        run: pnpm check
+      - name: Build
+        if: steps.published.outputs.already != 'true'
+        run: pnpm build
+      - name: Test
+        if: steps.published.outputs.already != 'true'
+        run: pnpm test
+      - name: Publish to npm with provenance
+        if: steps.published.outputs.already != 'true'
+        run: npm publish --provenance --access public
