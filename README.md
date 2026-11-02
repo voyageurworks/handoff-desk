@@ -2,8 +2,9 @@
 
 **Hand tasks from your coding session to a personal agent, and read the answer back.**
 
-[![CI](../../workflows/CI/badge.svg)](../../actions/workflows/ci.yml)
-[![Security](../../workflows/Security/badge.svg)](../../actions/workflows/security.yml)
+[![npm](https://img.shields.io/npm/v/@voyageurworks/handoff-desk.svg)](https://www.npmjs.com/package/@voyageurworks/handoff-desk)
+[![CI](https://github.com/voyageurworks/handoff-desk/actions/workflows/ci.yml/badge.svg)](https://github.com/voyageurworks/handoff-desk/actions/workflows/ci.yml)
+[![Security](https://github.com/voyageurworks/handoff-desk/actions/workflows/security.yml/badge.svg)](https://github.com/voyageurworks/handoff-desk/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-339933.svg)](package.json)
 
