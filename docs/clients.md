@@ -113,7 +113,7 @@ Each client has its own shape; the generator knows them (VS Code `servers`, Zed 
 | Client | Where it goes | `install` can write it | Evidence |
 | --- | --- | --- | --- |
 | Claude Code | `claude mcp add` (above) | no | verified, Windows |
-| Gemini CLI | `~/.gemini/settings.json` | yes | verified: `gemini mcp list` showed it connected (Gemini CLI 0.66.0, Windows) |
+| Gemini CLI | `~/.gemini/settings.json` | yes | verified: started and handshake completed (Gemini CLI 0.66.0, Windows; needs folder trust, else Gemini shows it Disabled) |
 | OpenCode | `opencode.json` (project) or the global OpenCode config | no | verified: `opencode mcp list` showed it connected (1.19.5, Windows) |
 | Kilo Code | `~/.config/kilo/kilo.jsonc` or `kilo.jsonc` / `.kilo/kilo.jsonc` in a project | no | verified with the Kilo CLI: `kilo mcp list` showed it connected (7.8.18, Windows); the editor extension was not run |
 | Codex | `~/.codex/config.toml` | no | read back by `codex mcp get` (0.166.0, Windows); that command does not start the server |

@@ -55,7 +55,7 @@ export const CLIENTS: ClientSpec[] = [
     render: options => json({ servers: { handoff: { type: "stdio", ...entry(options) } } }),
   },
   { id: "windsurf", name: "Windsurf (Devin Desktop)", evidence: "documented", where: "~/.config/devin/mcp_config.json (Windows %APPDATA%\\devin\\mcp_config.json); older versions: ~/.codeium/windsurf/mcp_config.json.", render: under("mcpServers") },
-  { id: "gemini-cli", name: "Gemini CLI", evidence: "verified", checked: "Gemini CLI 0.66.0 on Windows 11: `gemini mcp list` showed the server connected (with folder trust off in a throwaway home); macOS and Linux not run.", where: "~/.gemini/settings.json for all projects, or .gemini/settings.json in one project.", render: under("mcpServers"), install: { file: [".gemini", "settings.json"], key: "mcpServers" } },
+  { id: "gemini-cli", name: "Gemini CLI", evidence: "verified", checked: "Gemini CLI 0.66.0 on Windows 11: `gemini mcp list` showed the server connected. A wrapper log shows Gemini started it and completed the initialize handshake (this command does not list tools). Folder trust was turned off in a throwaway home, because Gemini otherwise reports the server Disabled; macOS and Linux not run.", where: "~/.gemini/settings.json for all projects, or .gemini/settings.json in one project.", render: under("mcpServers"), install: { file: [".gemini", "settings.json"], key: "mcpServers" } },
   {
     id: "codex", name: "Codex (CLI and IDE)", evidence: "read", checked: "Codex 0.166.0 on Windows 11: `codex mcp get handoff` read the file back correctly (stdio, the command, the arguments, the env); that command does not start the server.",
     where: "~/.codex/config.toml (or .codex/config.toml in a trusted project), or `codex mcp add handoff -- <command>`.",
@@ -68,12 +68,12 @@ export const CLIENTS: ClientSpec[] = [
   { id: "cline", name: "Cline", evidence: "documented", where: "cline_mcp_settings.json (MCP Servers icon, Configure tab, Configure MCP Servers).", render: under("mcpServers") },
   { id: "roo-code", name: "Roo Code", evidence: "documented", where: "MCP settings, Edit Global MCP, or .roo/mcp.json in one project (the project file wins).", render: under("mcpServers") },
   {
-    id: "opencode", name: "OpenCode", evidence: "verified", checked: "OpenCode 1.19.5 on Windows 11: `opencode mcp list` showed the server connected; macOS and Linux not run.",
+    id: "opencode", name: "OpenCode", evidence: "verified", checked: "OpenCode 1.19.5 on Windows 11: `opencode mcp list` showed the server connected, and a wrapper log shows it started the server, completed the handshake and requested its tools; macOS and Linux not run.",
     where: "opencode.json or opencode.jsonc (your project root or your global OpenCode config). OpenCode's key is `mcp`, a local server's command is one array, and the environment key is `environment`.",
     render: options => json({ $schema: "https://opencode.ai/config.json", mcp: { handoff: localEntry(options) } }),
   },
   {
-    id: "kilo-code", name: "Kilo Code", evidence: "verified", checked: "Kilo CLI 7.8.18 on Windows 11, reading $XDG_CONFIG_HOME/kilo/kilo.jsonc: `kilo mcp list` showed the server connected; the editor extension was not run.",
+    id: "kilo-code", name: "Kilo Code", evidence: "verified", checked: "Kilo CLI 7.8.18 on Windows 11, reading $XDG_CONFIG_HOME/kilo/kilo.jsonc: `kilo mcp list` showed the server connected, and a wrapper log shows it started the server, completed the handshake and requested its tools; the editor extension was not run.",
     where: "kilo.jsonc: ~/.config/kilo/kilo.jsonc for every project, or kilo.jsonc (or .kilo/kilo.jsonc) in one project; the project file wins. Kilo's key is `mcp`; merge it into the file if it already has one. The settings screen (Agent Behaviour, MCP Servers) edits the same file.",
     render: options => json({ mcp: { handoff: localEntry(options) } }),
   },
