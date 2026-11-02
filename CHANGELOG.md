@@ -2,6 +2,8 @@
 
 ## 1.0.0 (2026-11-01)
 
+- Published to npm as `@voyageurworks/handoff-desk` (the first version was published by hand, so it has no provenance badge).
+
 - A leading `~` in `HANDOFF_DIR`, `HANDOFF_MAIL_DIR`, `HANDOFF_ENV_FILE` and the `init` argument is expanded to the home folder. PowerShell, Command Prompt and JSON configs do not expand it, which used to create a folder literally named `~`.
 - CI now also runs on macOS, runs the quick start under bash and zsh on Linux and macOS, and launches the server from every config example in docs/clients.md.
 

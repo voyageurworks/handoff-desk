@@ -50,6 +50,8 @@ npm run build
 
 With pnpm: `pnpm install && pnpm build`.
 
+The package is also on npm: `npm install -g @voyageurworks/handoff-desk` installs a `handoff-desk` command that does what `node dist/main.js` does below (for example `handoff-desk init ~/handoff-demo`). Releases after 1.0.0 are published from GitHub Actions with provenance.
+
 **2. Create a demo desk.** `init` creates `Desk/`, `Inbox/`, `mail/` and a `handoff.md` template. Running it again never overwrites your edits.
 
 ```sh
