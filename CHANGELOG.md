@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3 (2026-11-02)
+
+- Fix: the server told MCP clients it was version 1.0.0 whatever was installed. It now reports the real package version (a test checks it).
+- Ready for the official MCP Registry: `mcpName` in package.json and a `server.json` (a test keeps their name and version in step); `glama.json` for the Glama directory.
+- README: a 30-second picture of how a handoff works, and a quick start that needs no clone or build (`npx`). Building from source is still documented.
+- Issue forms instead of plain templates, and Discussions for questions.
+
 ## 1.0.2 (2026-11-02)
 
 - Version 1.0.1 was tagged but never published to npm (its release job failed before the publish step), so 1.0.2 is the first version published from GitHub Actions.

@@ -1,0 +1,48 @@
+name: Bug report
+description: Something does not work as the README says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste passwords, app passwords, tokens or the contents of private notes.** For anything security-related, use the private report link on the issue chooser (see SECURITY.md) instead of opening an issue.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest version you can.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: handoff-desk version
+      description: "For example 1.0.3. Shown by `npm ls -g @voyageurworks/handoff-desk`, or by your MCP client's server list."
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Node version and operating system
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      description: Claude Code, Cursor, VS Code, Codex, Claude Desktop, other.
+  - type: dropdown
+    id: desk
+    attributes:
+      label: Desk type
+      options:
+        - Plain folder
+        - Git sync (private repository)
+        - Mailbox (email doorbell)
+        - Not sure

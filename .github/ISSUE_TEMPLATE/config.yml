@@ -1,1 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question or show what you built
+    url: https://github.com/voyageurworks/handoff-desk/discussions
+    about: Setup help, ideas, and what you are using handoff-desk with. Discussions are the place for anything that is not a bug.
+  - name: Report a security problem privately
+    url: https://github.com/voyageurworks/handoff-desk/security/advisories/new
+    about: If something exposes a secret or private note, report it here and not in a public issue. See SECURITY.md.

@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { readFileSync } from "node:fs";
 import { lstat, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z, type ZodRawShape } from "zod";
@@ -10,6 +11,9 @@ import { ringDoorbell, ringMessage } from "./doorbell.js";
 import { assertNoteFileName, listInbox, replyToInbox } from "./inbox.js";
 import { localIso } from "./note.js";
 import type { SyncHandle } from "./sync.js";
+
+/** The package's own version, so MCP clients see what is actually installed (src/ and dist/ both sit one level below package.json). */
+const packageVersion = (JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
 
 const ok = (value: unknown) => ({ content: [{ type: "text" as const, text: typeof value === "string" ? value : JSON.stringify(value, null, 2) }] });
 const failed = (error: unknown) => ({ isError: true, content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }] });
@@ -38,7 +42,7 @@ const SEND_DESCRIPTION = "Hand a task to the user's personal agent. It lands as 
 export type SyncSource = SyncHandle | null | Error | (() => Promise<SyncHandle | null>);
 
 export function buildServer(config: HandoffConfig, syncSource: SyncSource = null): McpServer {
-  const server = new McpServer({ name: "handoff", version: "1.0.0" });
+  const server = new McpServer({ name: "handoff", version: packageVersion });
 
   type Context = { desk: Desk; sync: SyncHandle | undefined };
   let pending: Promise<Context> | undefined;

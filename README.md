@@ -15,6 +15,17 @@
 - **Safe by default.** Requests that look like they contain a password or key are refused, git transports are restricted, and text from the agent is marked as untrusted.
 - **Reviewable.** Every task and answer is a note you can read, diff and delete.
 
+## In 30 seconds
+
+```text
+You, in Claude Code:  "Hand this to my agent: book the dentist for Friday at 3."
+handoff-desk writes:  Desk/2026-11-02 Item 01 - Book dentist.md   (status: waiting)
+Your agent (any):     reads the note, does the task, writes "## Reply", sets status: done
+You, same chat:       "What did my agent say?"  ->  the reply, read back from that note
+```
+
+Not to be confused with the "handoffs" inside an agent framework (one agent passing a conversation to another inside a single run). This is asynchronous and between separate programs: your coding assistant writes a note, a different agent (on your PC, in the cloud, or a person) answers when it can, and the note stays on disk as the record.
+
 > Status: 1.0. The tools and the note format are stable. Agent coverage is narrow: it is tested on every change with the bundled stand-in agent, and was tried with one real cloud agent over git and email (five rounds on 2026-10-26, all passed). Other agents are untested. See [Compatibility](#compatibility).
 
 ## How it works
@@ -40,6 +51,48 @@ More detail, including the folder layout and the git flow, is in [docs/architect
 
 You need [Node.js](https://nodejs.org) 22 or newer (this includes npm) and git. [pnpm](https://pnpm.io) works too.
 
+**1. Create a demo desk.** `init` creates `Desk/`, `Inbox/`, `mail/` and a `handoff.md` template. Running it again never overwrites your edits. Nothing to install first; `npx` fetches the package from npm:
+
+```sh
+npx -y @voyageurworks/handoff-desk init ~/handoff-demo
+```
+
+**2. Add the server to Claude Code** (other clients: [docs/clients.md](docs/clients.md)). On macOS and Linux:
+
+```sh
+claude mcp add handoff-demo -e HANDOFF_DIR="$HOME/handoff-demo" -- npx -y @voyageurworks/handoff-desk
+```
+
+On **Windows PowerShell**, run `npx` through `cmd /c` and write the double dash in quotes (PowerShell 5.1 drops a bare `--`, and `claude` then reports `missing required argument 'commandOrUrl'`):
+
+```powershell
+claude mcp add handoff-demo -e HANDOFF_DIR="$HOME/handoff-demo" '--' cmd /c npx -y '@voyageurworks/handoff-desk'
+```
+
+**3. Start the stand-in agent** in a second terminal and leave it running. It answers every waiting item with a fixed line. In macOS or Linux shells:
+
+```sh
+HANDOFF_DIR="$HOME/handoff-demo" npx -y @voyageurworks/handoff-desk stand-in
+```
+
+In Windows PowerShell:
+
+```powershell
+$env:HANDOFF_DIR = "$HOME/handoff-demo"
+npx -y @voyageurworks/handoff-desk stand-in
+```
+
+**4. Try it.** Start a new Claude Code session (servers load at startup) and say: **"Hand this to my agent as a question using the handoff-demo tools: reply with pong."** Claude calls `handoff_send`, then `handoff_wait`, and shows the stand-in's reply. Open `~/handoff-demo/Desk/` to see the note flip from `status: waiting` to `status: done`.
+
+**5. Clean up.** Stop the stand-in (Ctrl+C) and run `claude mcp remove handoff-demo`. Delete `~/handoff-demo` if you like.
+
+Something not working? See [docs/troubleshooting.md](docs/troubleshooting.md).
+
+<details>
+<summary>Building from source instead (contributors)</summary>
+
+The same server, run from a clone of this repository. In the quick-start steps above, use `node /absolute/path/to/handoff-desk/dist/main.js` wherever they say `npx -y @voyageurworks/handoff-desk`.
+
 **1. Install and build** (macOS, Linux and Windows):
 
 ```sh
@@ -51,7 +104,7 @@ npm run build
 
 With pnpm: `pnpm install && pnpm build`.
 
-The package is also on npm: `npm install -g @voyageurworks/handoff-desk` installs a `handoff-desk` command that does what `node dist/main.js` does below (for example `handoff-desk init ~/handoff-demo`). Releases after 1.0.0 are published from GitHub Actions with provenance.
+Releases are published to npm from GitHub Actions with a provenance statement; `npm install -g @voyageurworks/handoff-desk` also installs a `handoff-desk` command.
 
 **2. Create a demo desk.** `init` creates `Desk/`, `Inbox/`, `mail/` and a `handoff.md` template. Running it again never overwrites your edits.
 
@@ -86,11 +139,7 @@ $env:HANDOFF_DIR = "$HOME/handoff-demo"
 node dist/main.js stand-in
 ```
 
-**5. Try it.** Start a new Claude Code session (servers load at startup) and say: **"Hand this to my agent as a question using the handoff-demo tools: reply with pong."** Claude calls `handoff_send`, then `handoff_wait`, and shows the stand-in's reply. Open `~/handoff-demo/Desk/` to see the note flip from `status: waiting` to `status: done`.
-
-**6. Clean up.** Stop the stand-in (Ctrl+C) and run `claude mcp remove handoff-demo`. Delete `~/handoff-demo` if you like.
-
-Something not working? See [docs/troubleshooting.md](docs/troubleshooting.md).
+</details>
 
 ## Connect your client
 

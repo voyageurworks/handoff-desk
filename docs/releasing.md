@@ -20,7 +20,7 @@ If npm already has the tagged version (the hand-published first one), the workfl
 
 ## Each release
 
-1. Update `version` in `package.json` and the date in `CHANGELOG.md`, commit, and wait for CI to pass on `main`.
+1. Update `version` in `package.json` **and in both places in `server.json`** (a test fails if they differ), and the date in `CHANGELOG.md`, commit, and wait for CI to pass on `main`.
 2. Create a GitHub release whose tag is `v` plus the version (for example `v1.0.1`).
 3. Open the `Release` run in the Actions tab, check that it is the version you meant, and approve the `npm-publish` deployment.
 
