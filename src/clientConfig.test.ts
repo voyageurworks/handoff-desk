@@ -12,7 +12,7 @@ const jsonClients = ["claude-desktop", "cursor", "windsurf", "gemini-cli", "lm-s
 
 describe("the client table", () => {
   it("lists exactly the clients documented in the research, each with a where and an honest label", () => {
-    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "claude-code", "claude-desktop", "cline", "codex", "cursor", "gemini-cli", "lm-studio", "roo-code", "vscode", "windsurf", "zed"]);
+    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "claude-code", "claude-desktop", "cline", "codex", "cursor", "gemini-cli", "lm-studio", "opencode", "roo-code", "vscode", "windsurf", "zed"]);
     for (const client of CLIENTS) {
       expect(client.where.length, client.id).toBeGreaterThan(5);
       expect(["verified", "documented"], client.id).toContain(client.evidence);
@@ -37,6 +37,11 @@ describe("renderClientConfig", () => {
     const config = JSON.parse(renderClientConfig("zed", unix)!);
     expect(Object.keys(config)).toEqual(["context_servers"]);
     expect(config.context_servers.handoff).toEqual({ command: "npx", args: ["-y", PACKAGE], env: { HANDOFF_DIR: "~/handoff" } });
+  });
+  it("OpenCode uses its own shape: a mcp key, a local type and the command as one array (from OpenCode's own documentation)", () => {
+    const config = JSON.parse(renderClientConfig("opencode", unix)!);
+    expect(config.mcp.handoff).toEqual({ type: "local", command: ["npx", "-y", PACKAGE], enabled: true, environment: { HANDOFF_DIR: "~/handoff" } });
+    expect(JSON.parse(renderClientConfig("opencode", windows)!).mcp.handoff.command).toEqual(["cmd", "/c", "npx", "-y", PACKAGE]);
   });
   it("Codex gets a TOML table, with the environment in its own sub-table", () => {
     const toml = renderClientConfig("codex", unix)!;

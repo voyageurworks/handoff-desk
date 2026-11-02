@@ -53,6 +53,11 @@ export const CLIENTS: ClientSpec[] = [
   { id: "lm-studio", name: "LM Studio", evidence: "documented", where: "~/.lmstudio/mcp.json (Program tab, Install, Edit mcp.json).", render: under("mcpServers") },
   { id: "cline", name: "Cline", evidence: "documented", where: "cline_mcp_settings.json (MCP Servers icon, Configure tab, Configure MCP Servers).", render: under("mcpServers") },
   { id: "roo-code", name: "Roo Code", evidence: "documented", where: "MCP settings, Edit Global MCP, or .roo/mcp.json in one project (the project file wins).", render: under("mcpServers") },
+  {
+    id: "opencode", name: "OpenCode", evidence: "documented",
+    where: "opencode.json or opencode.jsonc (your project root or your global OpenCode config). OpenCode's key is `mcp`, a local server's command is one array, and the environment key is `environment`.",
+    render: options => json({ $schema: "https://opencode.ai/config.json", mcp: { handoff: { type: "local", command: [launch(options).command, ...launch(options).args], enabled: true, environment: { HANDOFF_DIR: options.dir } } } }),
+  },
   { id: "amazon-q", name: "Amazon Q Developer", evidence: "documented", where: "~/.aws/amazonq/default.json (or .amazonq/default.json in one project); the older mcp.json files are still read.", render: under("mcpServers") },
   {
     id: "zed", name: "Zed", evidence: "documented",
