@@ -11,7 +11,7 @@ Maintainer notes. Releases publish to npm as `@voyageurworks/handoff-desk` from 
    npm login
    npm publish --access public
    ```
-4. On npmjs.com open the package, Settings, Trusted Publisher, and choose GitHub Actions: organization `voyageurworks`, repository `handoff-desk`, workflow `release.yml`. From then on no npm token is needed.
+4. On npmjs.com open the package, Settings, Trusted Publisher, and choose GitHub Actions: organization `voyageurworks`, repository `handoff-desk`, workflow `release.yml`, and tick **Allow npm publish** under Allowed actions (the workflow runs `npm publish`; leaving it unticked would make npm stage each new version for manual approval instead). Leave the environment name empty. npm asks for your two-factor method (authenticator code or security key) when you save it. From then on no npm token is needed.
 
 The `Release` workflow skips publishing, with a notice, when npm already has the tagged version. That keeps the GitHub release for the hand-published first version from failing.
 
