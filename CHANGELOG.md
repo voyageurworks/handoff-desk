@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 (2026-11-02)
+
+- Releases now go through a two-job workflow with an approval step, and are published from GitHub Actions with a provenance statement (npm trusted publishing). No change to the server itself.
+- More search keywords in `package.json`; the npm page and badges are fixed.
+
 ## 1.0.0 (2026-11-01)
 
 - Published to npm as `@voyageurworks/handoff-desk` (the first version was published by hand, so it has no provenance badge).
