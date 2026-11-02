@@ -11,7 +11,7 @@
   "bin": { "handoff-desk": "dist/main.js" },
   "files": ["dist", "templates", "docs", "README.md", "LICENSE"],
   "engines": { "node": ">=22" },
-  "keywords": ["mcp", "model-context-protocol", "agent", "handoff", "claude-code", "cursor"],
+  "keywords": ["mcp", "mcp-server", "model-context-protocol", "agent", "agent-handoff", "handoff", "claude-code", "cursor", "codex", "inbox", "personal-agent"],
   "scripts": {
     "build": "tsc -p .",
     "check": "tsc -p . --noEmit",
