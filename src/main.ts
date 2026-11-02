@@ -3,13 +3,14 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import os from "node:os";
 import { configCommand } from "./clientConfig.js";
 import { expandHome, loadConfig, syncEnv } from "./config.js";
+import { formatDoctor, runDoctor } from "./doctor.js";
 import { initDesk } from "./init.js";
 import { INSTALLABLE, installClient } from "./install.js";
 import { buildServer } from "./server.js";
 import { runStandIn } from "./standin.js";
 import { detectSync, ensureClone, git, type SyncHandle } from "./sync.js";
 
-const USAGE = "Usage: handoff-desk [init [dir] | stand-in [--once] [--git] | config --client <name> | config --list | install --client <name>]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)\n  install        add the server to a client's own settings file (dry run unless --write)";
+const USAGE = "Usage: handoff-desk [init [dir] | stand-in [--once] [--git] | config --client <name> | config --list | install --client <name> | doctor]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)\n  install        add the server to a client's own settings file (dry run unless --write)\n  doctor         check the setup and say what to fix (--client <name> reads that client's settings; --ping sends a test message to Telegram and Slack)";
 
 const [command, ...rest] = process.argv.slice(2);
 const config = loadConfig();
@@ -72,6 +73,11 @@ if (command === undefined) {
   }
   const result = await installClient(id, { home: os.homedir(), dir: value("--dir") ?? "~/handoff", windows: rest.includes("--windows") || process.platform === "win32", write: rest.includes("--write"), force: rest.includes("--force") });
   (result.code === 0 ? console.log : console.error)(result.message);
+  process.exitCode = result.code;
+} else if (command === "doctor") {
+  const at = rest.indexOf("--client");
+  const result = await runDoctor({ env: process.env, client: at >= 0 ? rest[at + 1] : undefined, ping: rest.includes("--ping") });
+  console.log(formatDoctor(result));
   process.exitCode = result.code;
 } else {
   console.error(USAGE);

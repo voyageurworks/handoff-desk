@@ -118,3 +118,24 @@ export async function installClient(id: string, options: InstallOptions): Promis
   }
   return { code: 0, message: `${client.name}: ${existing ? "updated" : "added"} the handoff entry in ${target}.${backup ? `\nBackup of the old file: ${backup}` : ""}\nRestart ${client.name} to load it.` };
 }
+
+/**
+ * The env of the handoff entry in a client's settings file, for `doctor --client`: what the server would be started with.
+ * Read only, and never printed. `reason` says what is wrong when there is none.
+ */
+export async function clientEnv(id: string, home: string): Promise<{ env: Record<string, string>; reason?: undefined } | { env?: undefined; reason: string }> {
+  const client = CLIENTS.find(candidate => candidate.id === id);
+  if (!client?.install) return { reason: `doctor can read the settings of: ${INSTALLABLE.join(", ")}. For ${client?.name ?? id}, run it with the settings in your environment instead (they are not in this terminal unless you set them).` };
+  const target = path.join(home, ...client.install.file);
+  const text = await readFile(target, "utf8").catch(() => null);
+  if (text === null) return { reason: `${target} does not exist, so ${client.name} has no handoff entry yet (handoff-desk install --client ${id}).` };
+  try {
+    const servers = (JSON.parse(text.replace(/^\uFEFF/, "")) as Record<string, unknown>)[client.install.key];
+    const entry = isObject(servers) ? servers.handoff : undefined;
+    if (!isObject(entry)) return { reason: `${target} has no handoff entry (handoff-desk install --client ${id}).` };
+    const env = isObject(entry.env) ? Object.fromEntries(Object.entries(entry.env).filter((pair): pair is [string, string] => typeof pair[1] === "string")) : {};
+    return { env };
+  } catch {
+    return { reason: `${target} is not plain JSON, so it could not be read.` };
+  }
+}

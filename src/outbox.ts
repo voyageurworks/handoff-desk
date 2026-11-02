@@ -56,6 +56,9 @@ async function write(dir: string, entries: OutboxEntry[]): Promise<void> {
   await rename(temporary, target);
 }
 
+/** How many items are waiting to be re-sent (read only). */
+export const pendingCount = async (dir: string): Promise<number> => (await read(dir)).length;
+
 const locked = async <T>(dir: string, task: () => Promise<T>): Promise<T> => withLock(dir, task, { waitMs: 5_000 });
 
 /** Remembers that these channels did not ring for this item. Merges with an entry that is already there. */

@@ -15,7 +15,7 @@ export type ChatConfig = {
   /** For tests only: send to a program on this computer instead of the real services (see loopbackEndpoint). */
   testEndpoint?: string;
 };
-export type ChatOptions = { includeRequest?: boolean; endpoint?: string; /** The message is a repeat of one that did not go through earlier. */ resend?: boolean };
+export type ChatOptions = { includeRequest?: boolean; endpoint?: string; /** The message is a repeat of one that did not go through earlier. */ resend?: boolean; /** A harmless test message from handoff-desk doctor. */ test?: boolean };
 /** `retryable` marks a failure that can pass (the network, a busy service); it is internal and never shown to the agent. */
 export type ChatOutcome = DoorbellResult & { retryable?: boolean };
 export type ChatResult = { telegram?: ChatOutcome; slack?: ChatOutcome };
@@ -37,6 +37,7 @@ const clean = (text: string) => text.replace(/[\u0000-\u001F\u007F]/g, " ").repl
  * says what to do; the request itself is added only when asked for.
  */
 export function chatText(item: RingItem, options: ChatOptions = {}): string {
+  if (options.test) return "handoff-desk doctor test: this doorbell works. Nothing to do.";
   const lines = [`${options.resend ? "Re-sent" : "New"} handoff #${item.id} (${item.type}): ${clean(item.title).slice(0, 120)}`, `Note: Desk/${clean(path.basename(item.path))}`];
   if (options.includeRequest) lines.push("", clean(item.request).slice(0, REQUEST_MAX));
   lines.push("", 'Answer under "## Reply" and set status to done.');
@@ -73,6 +74,10 @@ const timedOut = (error: unknown) => error instanceof Error && (error.name === "
 const TOKEN = /^\d{3,20}:[A-Za-z0-9_-]{16,80}$/;
 /** A numeric chat id (groups and channels are negative) or a public channel name. */
 const CHAT = /^(-?\d{1,20}|@[A-Za-z0-9_]{4,64})$/;
+
+export const validTelegramToken = (value: string) => TOKEN.test(value);
+export const validTelegramChat = (value: string) => CHAT.test(value);
+export const validSlackWebhook = (value: string) => slackWebhook(value) !== null;
 
 export async function ringTelegram(config: NonNullable<ChatConfig["telegram"]>, item: RingItem, options: ChatOptions = {}, fetchImpl: typeof fetch = fetch): Promise<ChatOutcome> {
   if (!config.token && !config.tokenCommand) return { rung: false, reason: "Telegram doorbell not configured (set HANDOFF_TELEGRAM_BOT_TOKEN or HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND)." };
