@@ -15,8 +15,13 @@ export type ChatConfig = {
   /** For tests only: send to a program on this computer instead of the real services (see loopbackEndpoint). */
   testEndpoint?: string;
 };
-export type ChatOptions = { includeRequest?: boolean; endpoint?: string };
-export type ChatResult = { telegram?: DoorbellResult; slack?: DoorbellResult };
+export type ChatOptions = { includeRequest?: boolean; endpoint?: string; /** The message is a repeat of one that did not go through earlier. */ resend?: boolean };
+/** `retryable` marks a failure that can pass (the network, a busy service); it is internal and never shown to the agent. */
+export type ChatOutcome = DoorbellResult & { retryable?: boolean };
+export type ChatResult = { telegram?: ChatOutcome; slack?: ChatOutcome };
+
+/** A status that is worth another try later: too many requests or a server fault, as opposed to a refused token. */
+const passing = (status: number) => status === 429 || status >= 500;
 
 /** Time allowed for each chat service to answer. */
 export const CHAT_STEP_MS = 10_000;
@@ -32,7 +37,7 @@ const clean = (text: string) => text.replace(/[\u0000-\u001F\u007F]/g, " ").repl
  * says what to do; the request itself is added only when asked for.
  */
 export function chatText(item: RingItem, options: ChatOptions = {}): string {
-  const lines = [`New handoff #${item.id} (${item.type}): ${clean(item.title).slice(0, 120)}`, `Note: Desk/${clean(path.basename(item.path))}`];
+  const lines = [`${options.resend ? "Re-sent" : "New"} handoff #${item.id} (${item.type}): ${clean(item.title).slice(0, 120)}`, `Note: Desk/${clean(path.basename(item.path))}`];
   if (options.includeRequest) lines.push("", clean(item.request).slice(0, REQUEST_MAX));
   lines.push("", 'Answer under "## Reply" and set status to done.');
   return lines.join("\n").slice(0, TELEGRAM_MAX);
@@ -69,7 +74,7 @@ const TOKEN = /^\d{3,20}:[A-Za-z0-9_-]{16,80}$/;
 /** A numeric chat id (groups and channels are negative) or a public channel name. */
 const CHAT = /^(-?\d{1,20}|@[A-Za-z0-9_]{4,64})$/;
 
-export async function ringTelegram(config: NonNullable<ChatConfig["telegram"]>, item: RingItem, options: ChatOptions = {}, fetchImpl: typeof fetch = fetch): Promise<DoorbellResult> {
+export async function ringTelegram(config: NonNullable<ChatConfig["telegram"]>, item: RingItem, options: ChatOptions = {}, fetchImpl: typeof fetch = fetch): Promise<ChatOutcome> {
   if (!config.token && !config.tokenCommand) return { rung: false, reason: "Telegram doorbell not configured (set HANDOFF_TELEGRAM_BOT_TOKEN or HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND)." };
   if (!config.chatId) return { rung: false, reason: "No Telegram chat for the doorbell (set HANDOFF_TELEGRAM_CHAT_ID)." };
   if (!CHAT.test(config.chatId)) return { rung: false, reason: "HANDOFF_TELEGRAM_CHAT_ID must be a number (a group id starts with -) or a public @channel name." };
@@ -84,10 +89,10 @@ export async function ringTelegram(config: NonNullable<ChatConfig["telegram"]>, 
       redirect: "error",
       signal: AbortSignal.timeout(CHAT_STEP_MS),
     });
-    return response.ok ? { rung: true } : { rung: false, reason: `Telegram answered ${response.status}, so the doorbell was not sent (check the bot token and that the bot may write to the chat).` };
+    return response.ok ? { rung: true } : { rung: false, retryable: passing(response.status), reason: `Telegram answered ${response.status}, so the doorbell was not sent (check the bot token and that the bot may write to the chat).` };
   } catch (error) {
     // Never the error's own text: it can carry the request address, and the token is part of it.
-    return { rung: false, reason: timedOut(error) ? `Telegram did not answer within ${Math.round(CHAT_STEP_MS / 1000)} seconds, so the doorbell was not sent.` : "Could not reach Telegram, so the doorbell was not sent." };
+    return { rung: false, retryable: true, reason: timedOut(error) ? `Telegram did not answer within ${Math.round(CHAT_STEP_MS / 1000)} seconds, so the doorbell was not sent.` : "Could not reach Telegram, so the doorbell was not sent." };
   }
 }
 
@@ -102,7 +107,7 @@ function slackWebhook(value: string): string | null {
   }
 }
 
-export async function ringSlack(config: NonNullable<ChatConfig["slack"]>, item: RingItem, options: ChatOptions = {}, fetchImpl: typeof fetch = fetch): Promise<DoorbellResult> {
+export async function ringSlack(config: NonNullable<ChatConfig["slack"]>, item: RingItem, options: ChatOptions = {}, fetchImpl: typeof fetch = fetch): Promise<ChatOutcome> {
   if (!config.webhook && !config.webhookCommand) return { rung: false, reason: "Slack doorbell not configured (set HANDOFF_SLACK_WEBHOOK_URL or HANDOFF_SLACK_WEBHOOK_COMMAND)." };
   const { pass: value, reason } = await resolvePassword({ pass: config.webhook, passCommand: config.webhookCommand }, undefined, "HANDOFF_SLACK_WEBHOOK_COMMAND");
   if (!value) return { rung: false, reason: reason ?? "No Slack webhook." };
@@ -117,9 +122,9 @@ export async function ringSlack(config: NonNullable<ChatConfig["slack"]>, item: 
       redirect: "error",
       signal: AbortSignal.timeout(CHAT_STEP_MS),
     });
-    return response.ok ? { rung: true } : { rung: false, reason: `Slack answered ${response.status}, so the doorbell was not sent (check that the webhook is still active).` };
+    return response.ok ? { rung: true } : { rung: false, retryable: passing(response.status), reason: `Slack answered ${response.status}, so the doorbell was not sent (check that the webhook is still active).` };
   } catch (error) {
-    return { rung: false, reason: timedOut(error) ? `Slack did not answer within ${Math.round(CHAT_STEP_MS / 1000)} seconds, so the doorbell was not sent.` : "Could not reach Slack, so the doorbell was not sent." };
+    return { rung: false, retryable: true, reason: timedOut(error) ? `Slack did not answer within ${Math.round(CHAT_STEP_MS / 1000)} seconds, so the doorbell was not sent.` : "Could not reach Slack, so the doorbell was not sent." };
   }
 }
 
@@ -127,8 +132,8 @@ const touched = (...values: Array<string | undefined>) => values.some(Boolean);
 
 /** Rings every configured channel at once; only configured channels appear in the result. Never throws. */
 export async function ringChat(config: ChatConfig, item: RingItem, options: ChatOptions = {}, fetchImpl: typeof fetch = fetch): Promise<ChatResult> {
-  const withSetting = { includeRequest: options.includeRequest ?? config.includeRequest, endpoint: options.endpoint ?? config.testEndpoint };
-  const jobs: Array<Promise<[keyof ChatResult, DoorbellResult]>> = [];
+  const withSetting = { includeRequest: options.includeRequest ?? config.includeRequest, endpoint: options.endpoint ?? config.testEndpoint, resend: options.resend };
+  const jobs: Array<Promise<[keyof ChatResult, ChatOutcome]>> = [];
   const t = config.telegram;
   if (t && touched(t.token, t.tokenCommand, t.chatId)) jobs.push(ringTelegram(t, item, withSetting, fetchImpl).then(result => ["telegram", result]));
   const s = config.slack;

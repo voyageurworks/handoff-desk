@@ -4,6 +4,7 @@ import path from "node:path";
 import { parseEnv } from "node:util";
 import type { DoorbellConfig } from "./doorbell.js";
 import { loopbackEndpoint, type ChatConfig } from "./notify.js";
+import { outboxDir } from "./outbox.js";
 import type { Identity } from "./sync.js";
 
 export type SyncMode = "auto" | "git" | "off";
@@ -13,6 +14,8 @@ export type HandoffConfig = {
   doorbell: DoorbellConfig;
   /** Optional Telegram and Slack doorbells (see notify.ts). Empty unless their settings are set. */
   chat: ChatConfig;
+  /** Folder for the retry list of chat doorbells; on this computer only, outside the desk (see outbox.ts). */
+  outbox: string;
   mailDir: string;
   /** Folder (inside `dir`) where the agent leaves notes for Claude. */
   inboxDir: string;
@@ -78,6 +81,7 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConf
       includeRequest: ["1", "true", "yes", "on"].includes((env.HANDOFF_NOTIFY_INCLUDE_REQUEST ?? "").toLowerCase()),
       ...testEndpoint(env.HANDOFF_CHAT_TEST_ENDPOINT),
     },
+    outbox: outboxDir(dir, env),
     mailDir: env.HANDOFF_MAIL_DIR ? expandHome(env.HANDOFF_MAIL_DIR) : path.join(dir, "mail"),
     inboxDir: env.HANDOFF_INBOX_DIR || "Inbox",
     sync: mode === "git" || mode === "off" ? mode : "auto",

@@ -7,8 +7,9 @@ import { archiveEmail } from "./archive.js";
 import { capabilitiesIn } from "./capabilities.js";
 import type { HandoffConfig } from "./config.js";
 import { createDesk, type Desk, type SendInput } from "./desk.js";
-import { ringDoorbell, ringMessage } from "./doorbell.js";
-import { ringChat } from "./notify.js";
+import { ringDoorbell, ringMessage, type RingItem } from "./doorbell.js";
+import { ringChat, type ChatResult } from "./notify.js";
+import { enqueue, flushOutbox, type Channel } from "./outbox.js";
 import { assertNoteFileName, listInbox, replyToInbox } from "./inbox.js";
 import { localIso } from "./note.js";
 import type { SyncHandle } from "./sync.js";
@@ -42,23 +43,46 @@ const SEND_DESCRIPTION = "Hand a task to the user's personal agent. It lands as 
  */
 export type SyncSource = SyncHandle | null | Error | (() => Promise<SyncHandle | null>);
 
-export function buildServer(config: HandoffConfig, syncSource: SyncSource = null, fetchImpl: typeof fetch = fetch): McpServer {
+export function buildServer(config: HandoffConfig, syncSource: SyncSource = null, fetchImpl: typeof fetch = fetch, extra: { now?: () => Date } = {}): McpServer {
+  const now = extra.now ?? (() => new Date());
   const server = new McpServer({ name: "handoff", version: packageVersion });
 
   type Context = { desk: Desk; sync: SyncHandle | undefined };
+  /** The re-send started with the server; the first handoff_send reports what it did, once. */
+  let startup: Promise<Array<{ id: number; channels: Channel[] }>> | undefined;
   let pending: Promise<Context> | undefined;
   const ready = (): Promise<Context> => {
     pending ??= (async () => {
       const state = typeof syncSource === "function" ? await syncSource() : syncSource;
       if (state instanceof Error) throw state;
       const sync = state ?? undefined;
-      return { sync, desk: createDesk({ ...config.desk, rootDir: config.dir, sync }) };
+      const context = { sync, desk: createDesk({ ...config.desk, rootDir: config.dir, sync }) };
+      // Whatever did not ring last time is tried when the server starts, without making the first tool call wait.
+      startup = resendDue(context.desk);
+      return context;
     })().catch(error => {
       pending = undefined;
       throw error;
     });
     return pending;
   };
+
+  const channelsOf = (chat: ChatResult): Channel[] => (["telegram", "slack"] as const).filter(channel => chat[channel] && !chat[channel]!.rung && chat[channel]!.retryable);
+  /** What the agent sees: the same fields as before; `retryable` is only for the outbox. */
+  const visible = (chat: ChatResult): ChatResult => Object.fromEntries(Object.entries(chat).map(([channel, outcome]) => [channel, { rung: outcome.rung, ...(outcome.reason ? { reason: outcome.reason } : {}) }]));
+
+  /** Tries again the chat doorbells that did not go through earlier and are due. Never throws and never blocks longer than the services' own time limits. */
+  async function resendDue(desk: Desk): Promise<Array<{ id: number; channels: Channel[] }>> {
+    const { resent } = await flushOutbox(config.outbox, async entry => {
+      const item = await desk.read(entry.id).catch(() => undefined);
+      // Answered, declined or deleted in the meantime: nobody needs the reminder.
+      if (!item || (item.status !== "waiting" && item.status !== "info")) return { gone: true };
+      const only: typeof config.chat = { ...config.chat, telegram: entry.channels.includes("telegram") ? config.chat.telegram : undefined, slack: entry.channels.includes("slack") ? config.chat.slack : undefined };
+      const chat = await ringChat(only, { type: item.type as RingItem["type"], id: item.id, title: item.title, path: item.path, request: item.request }, { resend: true }, fetchImpl);
+      return { rung: (["telegram", "slack"] as const).filter(channel => chat[channel]?.rung), retry: channelsOf(chat) };
+    }, now()).catch(() => ({ resent: [] }));
+    return resent;
+  }
 
   /** Writes the note, rings the doorbell outside the desk lock, and keeps a copy of the email. */
   async function deliver(input: SendInput) {
@@ -67,7 +91,12 @@ export function buildServer(config: HandoffConfig, syncSource: SyncSource = null
     const item = { type: input.type, id: written.id, title: input.title, path: written.path, request: input.request, replyBy: input.replyBy };
     const options = { prefix: config.prefix, sync: Boolean(sync) };
     // The email and the chat doorbells ring at the same time, so a slow service never adds up with another.
-    const [doorbell, chat] = await Promise.all([ringDoorbell(config.doorbell, item, options), ringChat(config.chat, item, {}, fetchImpl)]);
+    const early = startup;
+    startup = undefined;
+    const [doorbell, chat, again, atStart] = await Promise.all([ringDoorbell(config.doorbell, item, options), ringChat(config.chat, item, {}, fetchImpl), resendDue(desk), early ?? []]);
+    const resent = [...atStart, ...again];
+    const failedForNow = channelsOf(chat);
+    if (failedForNow.length) await enqueue(config.outbox, written.id, failedForNow, now()).catch(() => undefined);
     const notified = [...(doorbell.rung ? ["email"] : []), ...(chat.telegram?.rung ? ["telegram"] : []), ...(chat.slack?.rung ? ["slack"] : [])];
     const ring = { ...doorbell, ...ringMessage(item, config.doorbell.to ?? "", options) };
     // Best effort: a full disk never loses the send, but it is said, since this copy is what a pending doorbell is re-sent from.
@@ -78,7 +107,7 @@ export function buildServer(config: HandoffConfig, syncSource: SyncSource = null
     } catch {
       emailCopyError = "The local copy of the email was not saved (the mail folder could not be written). The item and the doorbell are unaffected.";
     }
-    return { id: written.id, path: written.path, ring, notified, ...(Object.keys(chat).length ? { chat } : {}), ...(emailCopy ? { emailCopy } : {}), ...(emailCopyError ? { emailCopyError } : {}) };
+    return { id: written.id, path: written.path, ring, notified, ...(Object.keys(chat).length ? { chat: visible(chat) } : {}), ...(resent.length ? { resent } : {}), ...(emailCopy ? { emailCopy } : {}), ...(emailCopyError ? { emailCopyError } : {}) };
   }
 
   addTool(server, "handoff_send", SEND_DESCRIPTION,
