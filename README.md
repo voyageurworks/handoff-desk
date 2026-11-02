@@ -15,6 +15,14 @@
 - **Safe by default.** Requests that look like they contain a password or key are refused, git transports are restricted, and text from the agent is marked as untrusted.
 - **Reviewable.** Every task and answer is a note you can read, diff and delete.
 
+## Try it
+
+```sh
+npx -y @voyageurworks/handoff-desk init ~/handoff-demo
+```
+
+That creates a demo desk. The five-minute walkthrough below (add it to Claude Code, answer with a stand-in agent) needs nothing else installed but Node.js 22 or newer.
+
 ## In 30 seconds
 
 ```text
