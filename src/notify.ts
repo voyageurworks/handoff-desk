@@ -12,8 +12,10 @@ export type ChatConfig = {
   slack?: { webhook?: string; webhookCommand?: string };
   /** Add a shortened copy of the request to the chat message. Off by default: chat services are third parties. */
   includeRequest?: boolean;
+  /** For tests only: send to a program on this computer instead of the real services (see loopbackEndpoint). */
+  testEndpoint?: string;
 };
-export type ChatOptions = { includeRequest?: boolean };
+export type ChatOptions = { includeRequest?: boolean; endpoint?: string };
 export type ChatResult = { telegram?: DoorbellResult; slack?: DoorbellResult };
 
 /** Time allowed for each chat service to answer. */
@@ -41,6 +43,25 @@ export function slackText(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/**
+ * The one way to point the doorbells somewhere else, so the real program can be tested against a local stand-in.
+ * Only plain http to this computer with a port is accepted, as an origin and nothing else; anything else is ignored and
+ * the real services are used. The token and webhook are still checked first, and only the destination changes.
+ */
+export function loopbackEndpoint(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    const port = Number(url.port);
+    if (url.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) return null;
+    if (!Number.isInteger(port) || port < 1 || port > 65535 || url.username || url.password) return null;
+    if (url.pathname !== "/" || url.search || url.hash) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 const timedOut = (error: unknown) => error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
 
 /** A real bot token looks like 123456789:AA... ; anything with other characters could change the API path. */
@@ -56,7 +77,7 @@ export async function ringTelegram(config: NonNullable<ChatConfig["telegram"]>, 
   if (!token) return { rung: false, reason: reason ?? "No Telegram bot token." };
   if (!TOKEN.test(token)) return { rung: false, reason: "The Telegram bot token does not look like a bot token (expected 123456789:ABC...)." };
   try {
-    const response = await fetchImpl(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const response = await fetchImpl(`${loopbackEndpoint(options.endpoint) ?? "https://api.telegram.org"}/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ chat_id: config.chatId, text: chatText(item, options), link_preview_options: { is_disabled: true } }),
@@ -88,7 +109,8 @@ export async function ringSlack(config: NonNullable<ChatConfig["slack"]>, item: 
   const webhook = slackWebhook(value);
   if (!webhook) return { rung: false, reason: "The Slack setting must be a Slack incoming webhook (https://hooks.slack.com/services/...); nothing was sent." };
   try {
-    const response = await fetchImpl(webhook, {
+    const local = loopbackEndpoint(options.endpoint);
+    const response = await fetchImpl(local ? `${local}/slack` : webhook, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text: slackText(chatText(item, options)) }),
@@ -105,7 +127,7 @@ const touched = (...values: Array<string | undefined>) => values.some(Boolean);
 
 /** Rings every configured channel at once; only configured channels appear in the result. Never throws. */
 export async function ringChat(config: ChatConfig, item: RingItem, options: ChatOptions = {}, fetchImpl: typeof fetch = fetch): Promise<ChatResult> {
-  const withSetting = { includeRequest: options.includeRequest ?? config.includeRequest };
+  const withSetting = { includeRequest: options.includeRequest ?? config.includeRequest, endpoint: options.endpoint ?? config.testEndpoint };
   const jobs: Array<Promise<[keyof ChatResult, DoorbellResult]>> = [];
   const t = config.telegram;
   if (t && touched(t.token, t.tokenCommand, t.chatId)) jobs.push(ringTelegram(t, item, withSetting, fetchImpl).then(result => ["telegram", result]));

@@ -24,6 +24,11 @@ const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 const under = (key: string) => (options: ClientOptions) => json({ [key]: { handoff: entry(options) } });
 // A JSON string is a valid TOML basic string for the text used here (escapes backslashes and quotes the same way).
 const toml = (value: string) => JSON.stringify(value);
+// Likewise a valid YAML double-quoted string, so the YAML blocks below never need a YAML library.
+const yamlString = (value: string) => JSON.stringify(value);
+const yamlList = (values: string[]) => `[${values.map(yamlString).join(", ")}]`;
+// OpenCode and Kilo Code share one shape: a `mcp` key, a local type, the command as one array and an `environment` key.
+const localEntry = (options: ClientOptions) => ({ type: "local", command: [launch(options).command, ...launch(options).args], enabled: true, environment: { HANDOFF_DIR: options.dir } });
 
 export const CLIENTS: ClientSpec[] = [
   {
@@ -56,7 +61,48 @@ export const CLIENTS: ClientSpec[] = [
   {
     id: "opencode", name: "OpenCode", evidence: "documented",
     where: "opencode.json or opencode.jsonc (your project root or your global OpenCode config). OpenCode's key is `mcp`, a local server's command is one array, and the environment key is `environment`.",
-    render: options => json({ $schema: "https://opencode.ai/config.json", mcp: { handoff: { type: "local", command: [launch(options).command, ...launch(options).args], enabled: true, environment: { HANDOFF_DIR: options.dir } } } }),
+    render: options => json({ $schema: "https://opencode.ai/config.json", mcp: { handoff: localEntry(options) } }),
+  },
+  {
+    id: "kilo-code", name: "Kilo Code", evidence: "documented",
+    where: "kilo.jsonc: ~/.config/kilo/kilo.jsonc for every project, or kilo.jsonc (or .kilo/kilo.jsonc) in one project; the project file wins. Kilo's key is `mcp`; merge it into the file if it already has one. The settings screen (Agent Behaviour, MCP Servers) edits the same file.",
+    render: options => json({ mcp: { handoff: localEntry(options) } }),
+  },
+  {
+    id: "kiro", name: "Kiro", evidence: "documented",
+    where: "~/.kiro/settings/mcp.json for every workspace, or .kiro/settings/mcp.json in one workspace (the workspace file wins). Kiro also accepts disabled, autoApprove and disabledTools per server; none is needed here.",
+    render: under("mcpServers"),
+  },
+  {
+    id: "amp", name: "Amp", evidence: "documented",
+    where: "~/.config/amp/settings.json for every project (no approval needed), or .amp/settings.json in one project (Amp asks you to approve a workspace server the first time). Merge the amp.mcpServers key into the file if it already has one.",
+    render: options => json({ "amp.mcpServers": { handoff: entry(options) } }),
+  },
+  {
+    id: "warp", name: "Warp", evidence: "documented",
+    where: "Warp, Settings, Agents, MCP servers, + Add, then paste this JSON (Warp adds every server in it). Warp starts the command itself and stops it when it exits.",
+    render: under("mcpServers"),
+  },
+  {
+    id: "jetbrains", name: "JetBrains AI Assistant", evidence: "documented",
+    where: "Settings, Tools, AI Assistant, Model Context Protocol (MCP), Add, then paste this JSON as the configuration and pick the server level (global or this project). JetBrains' documentation shows command and args; env is the common MCP key and is included so the desk folder reaches the server, so check the server starts and use handoff-desk doctor if it does not.",
+    render: under("mcpServers"),
+  },
+  {
+    id: "continue", name: "Continue", evidence: "documented",
+    where: "A new file .continue/mcpServers/handoff.yaml in your workspace (or the same folder under your home folder). Continue reads every YAML file in that folder; no other file needs to change.",
+    render: options => {
+      const { command, args } = launch(options);
+      return ["name: Handoff Desk", "version: 0.0.1", "schema: v1", "mcpServers:", "  - name: handoff", `    command: ${yamlString(command)}`, `    args: ${yamlList(args)}`, "    env:", `      HANDOFF_DIR: ${yamlString(options.dir)}`, ""].join("\n");
+    },
+  },
+  {
+    id: "goose", name: "Goose", evidence: "documented",
+    where: "Under the `extensions:` key in Goose's config.yaml (Windows %APPDATA%\Block\goose\config\config.yaml; macOS and Linux ~/.config/goose/config.yaml), or add the same values in the app: Extensions, Add custom extension, Command-line extension. Merge the handoff entry into the existing extensions key.",
+    render: options => {
+      const { command, args } = launch(options);
+      return ["extensions:", "  handoff:", "    type: stdio", "    name: handoff", "    enabled: true", `    cmd: ${yamlString(command)}`, `    args: ${yamlList(args)}`, "    env_keys: []", "    envs:", `      HANDOFF_DIR: ${yamlString(options.dir)}`, "    timeout: 300", ""].join("\n");
+    },
   },
   { id: "amazon-q", name: "Amazon Q Developer", evidence: "documented", where: "~/.aws/amazonq/default.json (or .amazonq/default.json in one project); the older mcp.json files are still read.", render: under("mcpServers") },
   {

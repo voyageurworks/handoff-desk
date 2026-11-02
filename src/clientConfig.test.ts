@@ -8,11 +8,11 @@ import { ensureBuilt } from "./testBuild.js";
 const root = path.resolve(import.meta.dirname, "..");
 const unix = { dir: "~/handoff", windows: false };
 const windows = { dir: "C:\\Users\\me\\handoff", windows: true };
-const jsonClients = ["claude-desktop", "cursor", "windsurf", "gemini-cli", "lm-studio", "cline", "roo-code", "amazon-q"];
+const jsonClients = ["claude-desktop", "cursor", "windsurf", "gemini-cli", "lm-studio", "cline", "roo-code", "amazon-q", "kiro", "warp", "jetbrains"];
 
 describe("the client table", () => {
   it("lists exactly the clients documented in the research, each with a where and an honest label", () => {
-    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "claude-code", "claude-desktop", "cline", "codex", "cursor", "gemini-cli", "lm-studio", "opencode", "roo-code", "vscode", "windsurf", "zed"]);
+    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "amp", "claude-code", "claude-desktop", "cline", "codex", "continue", "cursor", "gemini-cli", "goose", "jetbrains", "kilo-code", "kiro", "lm-studio", "opencode", "roo-code", "vscode", "warp", "windsurf", "zed"]);
     for (const client of CLIENTS) {
       expect(client.where.length, client.id).toBeGreaterThan(5);
       expect(["verified", "documented"], client.id).toContain(client.evidence);
@@ -42,6 +42,46 @@ describe("renderClientConfig", () => {
     const config = JSON.parse(renderClientConfig("opencode", unix)!);
     expect(config.mcp.handoff).toEqual({ type: "local", command: ["npx", "-y", PACKAGE], enabled: true, environment: { HANDOFF_DIR: "~/handoff" } });
     expect(JSON.parse(renderClientConfig("opencode", windows)!).mcp.handoff.command).toEqual(["cmd", "/c", "npx", "-y", PACKAGE]);
+  });
+  it("Kilo Code uses the OpenCode-like shape in kilo.jsonc (from Kilo's own documentation)", () => {
+    const config = JSON.parse(renderClientConfig("kilo-code", unix)!);
+    expect(Object.keys(config)).toEqual(["mcp"]);
+    expect(config.mcp.handoff).toEqual({ type: "local", command: ["npx", "-y", PACKAGE], enabled: true, environment: { HANDOFF_DIR: "~/handoff" } });
+    expect(JSON.parse(renderClientConfig("kilo-code", windows)!).mcp.handoff.command).toEqual(["cmd", "/c", "npx", "-y", PACKAGE]);
+  });
+  it("Amp nests the server under the dotted key amp.mcpServers and says workspace files need approval", () => {
+    const config = JSON.parse(renderClientConfig("amp", unix)!);
+    expect(Object.keys(config)).toEqual(["amp.mcpServers"]);
+    expect(config["amp.mcpServers"].handoff).toEqual({ command: "npx", args: ["-y", PACKAGE], env: { HANDOFF_DIR: "~/handoff" } });
+    expect(CLIENTS.find(client => client.id === "amp")!.where).toMatch(/approv/i);
+  });
+  it("Continue gets a YAML block file with a name, version, schema and a mcpServers list", () => {
+    const yaml = renderClientConfig("continue", unix)!;
+    expect(yaml).toContain("name: Handoff Desk");
+    expect(yaml).toContain("schema: v1");
+    expect(yaml).toContain("mcpServers:\n  - name: handoff\n    command: " + JSON.stringify("npx") + "\n");
+    expect(yaml).toContain("    args: [" + JSON.stringify("-y") + ", " + JSON.stringify(PACKAGE) + "]\n");
+    expect(yaml).toContain("      HANDOFF_DIR: " + JSON.stringify("~/handoff"));
+    expect(renderClientConfig("continue", windows)!).toContain("      HANDOFF_DIR: " + JSON.stringify(windows.dir));
+    expect(renderClientConfig("continue", windows)!).toContain("    command: " + JSON.stringify("cmd"));
+  });
+  it("Goose gets an extensions entry of type stdio with cmd, args, env_keys, envs and a timeout", () => {
+    const yaml = renderClientConfig("goose", unix)!;
+    expect(yaml).toContain("extensions:\n  handoff:\n    type: stdio\n    name: handoff\n    enabled: true\n");
+    expect(yaml).toContain("    cmd: " + JSON.stringify("npx") + "\n");
+    expect(yaml).toContain("    args: [" + JSON.stringify("-y") + ", " + JSON.stringify(PACKAGE) + "]\n");
+    expect(yaml).toContain("    env_keys: []\n");
+    expect(yaml).toContain("    envs:\n      HANDOFF_DIR: " + JSON.stringify("~/handoff") + "\n");
+    expect(yaml).toContain("    timeout: 300");
+    expect(renderClientConfig("goose", windows)!).toContain("    cmd: " + JSON.stringify("cmd"));
+  });
+  it("the YAML blocks use no tabs and no trailing spaces, and end with a newline", () => {
+    for (const id of ["continue", "goose"]) {
+      const text = renderClientConfig(id, windows)!;
+      expect(text, id).not.toContain("\t");
+      expect(text, id).not.toMatch(/ +\n/);
+      expect(text.endsWith("\n"), id).toBe(true);
+    }
   });
   it("Codex gets a TOML table, with the environment in its own sub-table", () => {
     const toml = renderClientConfig("codex", unix)!;
@@ -83,6 +123,7 @@ describe("configCommand", () => {
   it("lists every client with its label", () => {
     const result = configCommand(["--list"], "linux");
     expect(result.code).toBe(0);
+    expect(result.out!.trim().split("\n")).toHaveLength(20);
     for (const client of CLIENTS) expect(result.out).toContain(client.id);
     expect(result.out).toMatch(/claude-code\s+.*verified/);
     expect(result.out).toMatch(/cursor\s+.*documented/);

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseEnv } from "node:util";
 import type { DoorbellConfig } from "./doorbell.js";
-import type { ChatConfig } from "./notify.js";
+import { loopbackEndpoint, type ChatConfig } from "./notify.js";
 import type { Identity } from "./sync.js";
 
 export type SyncMode = "auto" | "git" | "off";
@@ -54,6 +54,14 @@ export function syncEnv(config: HandoffConfig, base: NodeJS.ProcessEnv = process
   return { ...base, HANDOFF_SYNC: mode, ...(config.identity ? { HANDOFF_GIT_NAME: config.identity.name, HANDOFF_GIT_EMAIL: config.identity.email } : {}) };
 }
 
+/** The loopback-only test destination for the chat doorbells; a value that is not one is ignored with a warning that never repeats it. */
+function testEndpoint(value: string | undefined): { testEndpoint?: string } {
+  if (!value) return {};
+  const endpoint = loopbackEndpoint(value);
+  if (!endpoint) console.error("handoff-desk: HANDOFF_CHAT_TEST_ENDPOINT ignored; only http://127.0.0.1:<port>, http://localhost:<port> or http://[::1]:<port> is accepted.");
+  return endpoint ? { testEndpoint: endpoint } : {};
+}
+
 /** Settings come from the environment (set in the MCP client's config) and, if HANDOFF_ENV_FILE names one, a private file. Nothing is printed, so stdout stays clean. */
 export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConfig {
   const env = withEnvFile(rawEnv);
@@ -68,6 +76,7 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConf
       ...(env.HANDOFF_TELEGRAM_BOT_TOKEN || env.HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND || env.HANDOFF_TELEGRAM_CHAT_ID ? { telegram: { token: env.HANDOFF_TELEGRAM_BOT_TOKEN, tokenCommand: env.HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND, chatId: env.HANDOFF_TELEGRAM_CHAT_ID } } : {}),
       ...(env.HANDOFF_SLACK_WEBHOOK_URL || env.HANDOFF_SLACK_WEBHOOK_COMMAND ? { slack: { webhook: env.HANDOFF_SLACK_WEBHOOK_URL, webhookCommand: env.HANDOFF_SLACK_WEBHOOK_COMMAND } } : {}),
       includeRequest: ["1", "true", "yes", "on"].includes((env.HANDOFF_NOTIFY_INCLUDE_REQUEST ?? "").toLowerCase()),
+      ...testEndpoint(env.HANDOFF_CHAT_TEST_ENDPOINT),
     },
     mailDir: env.HANDOFF_MAIL_DIR ? expandHome(env.HANDOFF_MAIL_DIR) : path.join(dir, "mail"),
     inboxDir: env.HANDOFF_INBOX_DIR || "Inbox",

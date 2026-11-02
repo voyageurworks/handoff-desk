@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { chatText, ringChat, ringSlack, ringTelegram, slackText } from "./notify.js";
+import { chatText, loopbackEndpoint, ringChat, ringSlack, ringTelegram, slackText } from "./notify.js";
 import { resolvePassword } from "./secret.js";
 
 // Fake credentials are assembled at run time, so no secret scanner ever sees one in the source.
@@ -188,5 +188,69 @@ describe("resolvePassword names the right setting", () => {
     const failing = node("process.exit(2)");
     expect((await resolvePassword({ passCommand: failing })).reason).toContain("HANDOFF_MAIL_PASSWORD_COMMAND");
     expect((await resolvePassword({ passCommand: failing }, 5000, "HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND")).reason).toContain("HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND");
+  });
+});
+
+describe("the loopback test endpoint", () => {
+  const item = { id: 7, type: "errand", title: "Book dentist", request: "Friday", path: "/home/me/handoff/Desk/0007 - book-dentist.md" } as Parameters<typeof ringTelegram>[1];
+  const fakeToken = `${"3".repeat(9)}:${"k".repeat(35)}`;
+  const fakeHook = ["https://hooks.slack.com/", "services/", "T", "2".repeat(8), "/B", "2".repeat(8), "/", "y".repeat(24)].join("");
+  const recorder = () => {
+    const urls: string[] = [];
+    return { urls, fetchImpl: (async (url: string | URL) => { urls.push(String(url)); return new Response("ok"); }) as typeof fetch };
+  };
+
+  it.each([
+    ["http://127.0.0.1:8123", "http://127.0.0.1:8123"],
+    ["http://localhost:9", "http://localhost:9"],
+    ["http://[::1]:65535", "http://[::1]:65535"],
+    ["http://127.0.0.1:8123/", "http://127.0.0.1:8123"],
+  ])("accepts %s", (value, expected) => {
+    expect(loopbackEndpoint(value)).toBe(expected);
+  });
+
+  it.each([
+    "https://127.0.0.1:8123", "http://127.0.0.1", "http://example.com:8123", "http://127.0.0.1.example.com:8123", "http://0.0.0.0:8123",
+    "http://127.0.0.2:8123", "http://user:pw@127.0.0.1:8123", "http://127.0.0.1:8123/path", "http://127.0.0.1:8123/?x=1", "http://127.0.0.1:8123/#x",
+    "http://127.0.0.1:0", "http://127.0.0.1:99999", "ftp://127.0.0.1:8123", "127.0.0.1:8123", "", "not a url",
+  ])("ignores %j", value => {
+    expect(loopbackEndpoint(value)).toBeNull();
+  });
+
+  it("sends Telegram to the endpoint, with the same path and body as the real service", async () => {
+    const { urls, fetchImpl } = recorder();
+    const result = await ringTelegram({ token: fakeToken, chatId: "42" }, item, { endpoint: "http://127.0.0.1:8123" }, fetchImpl);
+    expect(result).toEqual({ rung: true });
+    expect(urls).toEqual([`http://127.0.0.1:8123/bot${fakeToken}/sendMessage`]);
+  });
+
+  it("sends Slack to /slack on the endpoint, but only after the webhook itself validated", async () => {
+    const { urls, fetchImpl } = recorder();
+    expect(await ringSlack({ webhook: fakeHook }, item, { endpoint: "http://127.0.0.1:8123" }, fetchImpl)).toEqual({ rung: true });
+    expect(urls).toEqual(["http://127.0.0.1:8123/slack"]);
+    const refused = recorder();
+    const result = await ringSlack({ webhook: "https://example.com/services/x" }, item, { endpoint: "http://127.0.0.1:8123" }, refused.fetchImpl);
+    expect(result.rung).toBe(false);
+    expect(refused.urls).toEqual([]);
+  });
+
+  it("still refuses a bad token or chat id when an endpoint is set", async () => {
+    const { urls, fetchImpl } = recorder();
+    expect((await ringTelegram({ token: "nope", chatId: "42" }, item, { endpoint: "http://127.0.0.1:8123" }, fetchImpl)).rung).toBe(false);
+    expect((await ringTelegram({ token: fakeToken, chatId: "x y" }, item, { endpoint: "http://127.0.0.1:8123" }, fetchImpl)).rung).toBe(false);
+    expect(urls).toEqual([]);
+  });
+
+  it("never uses a remote or https endpoint even if one reaches the senders: the real service is used", async () => {
+    const { urls, fetchImpl } = recorder();
+    await ringTelegram({ token: fakeToken, chatId: "42" }, item, { endpoint: "https://evil.example:443" }, fetchImpl);
+    await ringSlack({ webhook: fakeHook }, item, { endpoint: "http://evil.example:80" }, fetchImpl);
+    expect(urls).toEqual([`https://api.telegram.org/bot${fakeToken}/sendMessage`, fakeHook]);
+  });
+
+  it("ringChat passes the configured endpoint to both channels", async () => {
+    const { urls, fetchImpl } = recorder();
+    await ringChat({ telegram: { token: fakeToken, chatId: "42" }, slack: { webhook: fakeHook }, testEndpoint: "http://localhost:8123" }, item, {}, fetchImpl);
+    expect(urls.sort()).toEqual([`http://localhost:8123/bot${fakeToken}/sendMessage`, "http://localhost:8123/slack"].sort());
   });
 });
