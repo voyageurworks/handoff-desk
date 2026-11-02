@@ -1,3 +1,5 @@
+<img src=".github/brand/icon.png" align="right" width="112" alt="handoff-desk icon">
+
 # handoff-desk
 
 **Hand tasks from your coding session to a personal agent, and read the answer back.**
