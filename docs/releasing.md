@@ -18,6 +18,17 @@ Maintainer notes. Releases publish to npm as `@voyageurworks/handoff-desk` from 
 
 If npm already has the tagged version (the hand-published first one), the workflow notes that and skips both the build steps and the publish.
 
+## After each npm release: the MCP Registry
+
+The server is listed in the official MCP Registry as `io.github.voyageurworks/handoff-desk` (`mcpName` in `package.json`, `server.json` in the repository root; a test keeps them in step).
+
+1. Make sure `server.json` shows the version you just released (the release steps below say where) and that the version is on npm.
+2. In the repository: Actions, **Publish to MCP Registry**, Run workflow, branch **main**. Approve the `mcp-registry` deployment (required reviewer; the environment only accepts runs from `main`).
+3. The job checks `server.json` against npm, downloads a pinned `mcp-publisher` and verifies it with cosign, validates the file, signs in with GitHub OIDC (no stored token) and publishes.
+4. Check the entry: `https://registry.modelcontextprotocol.io/v0/servers?search=voyageurworks`.
+
+Good to know: the registry only accepts a version that is already on npm, a published registry version cannot be changed (a fix needs a new version), and the registry is still labelled a preview where data may be reset. The workflow lets one action beyond GitHub's own run (`sigstore/cosign-installer`, pinned to an exact commit in the repository's Actions settings).
+
 ## Each release
 
 1. Update `version` in `package.json` **and in both places in `server.json`** (a test fails if they differ), and the date in `CHANGELOG.md`, commit, and wait for CI to pass on `main`.
