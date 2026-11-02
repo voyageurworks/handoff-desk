@@ -8,6 +8,10 @@ The doorbell needs an app password for the sender's mailbox. Three ways to give 
 
 Use a separate sending mailbox for the doorbell if you can, so a leaked app password never reaches your main account.
 
+## The Telegram bot token and the Slack webhook
+
+The optional chat doorbells have two more secrets, handled the same way: put `HANDOFF_TELEGRAM_BOT_TOKEN` and `HANDOFF_SLACK_WEBHOOK_URL` in the private file named by `HANDOFF_ENV_FILE`, or set `HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND` and `HANDOFF_SLACK_WEBHOOK_COMMAND` to commands that print them (the recipes below work the same). Anyone who holds a bot token can write as the bot, and anyone who holds a webhook can post to that channel, so treat both like a password. They are never printed, logged or returned in a tool result; if you pasted one anywhere by mistake, revoke it (BotFather: `/revoke`; Slack: delete the webhook) and make a new one.
+
 ## Recipes for the command
 
 Windows, encrypted for your Windows user on this PC only (no extra software). Store it once (the prompt hides what you type):

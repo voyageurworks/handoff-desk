@@ -219,6 +219,32 @@ Set these as environment variables in your MCP client's config.
 | `HANDOFF_GIT_NAME`, `HANDOFF_GIT_EMAIL` | the repository's git config, else `handoff-desk` | Identity for the desk's commits |
 | `HANDOFF_INBOX_DIR` | `Inbox` | Folder where the agent leaves notes for Claude |
 | `HANDOFF_SUBJECT_PREFIX` | `Handoff` | Subject of the doorbell email: `[<prefix> errand #3] ...` |
+| `HANDOFF_TELEGRAM_BOT_TOKEN`, `HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND` | none | Optional Telegram doorbell: the bot's token, or a command that prints it (see [Chat doorbells](#chat-doorbells-telegram-and-slack)) |
+| `HANDOFF_TELEGRAM_CHAT_ID` | none | The chat the bot writes to (a number; a group's starts with `-`; or a public `@channel`) |
+| `HANDOFF_SLACK_WEBHOOK_URL`, `HANDOFF_SLACK_WEBHOOK_COMMAND` | none | Optional Slack doorbell: an incoming-webhook URL (`https://hooks.slack.com/services/...`), or a command that prints it |
+| `HANDOFF_NOTIFY_INCLUDE_REQUEST` | off | `1` adds the first 500 characters of the request to the Telegram and Slack messages. By default they carry only the id, type, title and note name |
+
+## Chat doorbells (Telegram and Slack)
+
+Besides the email, handoff-desk can post a short message to Telegram and/or Slack when a note is created, so the agent (or you) hears about it at once. Both are **off unless you set them**, send nothing but this one message, and never read anything back: the agent still answers in the note.
+
+- The message says `New handoff #3 (question): <title>`, the note's name under `Desk/`, and what to do. It does **not** contain the request unless `HANDOFF_NOTIFY_INCLUDE_REQUEST=1`, and it never contains your computer's folder names. Chat services are third parties.
+- **Telegram:** create a bot with @BotFather, write to it once (or add it to a group), and set `HANDOFF_TELEGRAM_BOT_TOKEN` (or `HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND`) and `HANDOFF_TELEGRAM_CHAT_ID`. Plain text only.
+- **Slack:** create an incoming webhook for a channel and set `HANDOFF_SLACK_WEBHOOK_URL` (or `HANDOFF_SLACK_WEBHOOK_COMMAND`). Only `https://hooks.slack.com/services/...` addresses are accepted, and `<!channel>`-style mentions in a title are neutralised.
+- The bot token and the webhook URL are secrets: keep them in `HANDOFF_ENV_FILE`, or fetch them with a command, like the mail password ([docs/keeping-secrets.md](docs/keeping-secrets.md)). They are never printed, logged or returned.
+- `handoff_send` returns `notified`: the list of doorbells that actually rang (`email`, `telegram`, `slack`), and a `chat` object with the reason for any that did not. If `notified` is empty nobody has been told yet.
+- Each service gets 10 seconds, all doorbells ring at the same time, and a failure never loses the note. There is no proxy support yet.
+- These doorbells were tested against the services' documented request format with a fake network, not against live accounts; try one with your own bot or webhook and report anything odd.
+
+## Generate a client config
+
+`handoff-desk config --client <name>` prints the settings block for an MCP client, with the right key for that client (VS Code, Zed and Codex differ from the rest) and `cmd /c` for `npx` on Windows. `handoff-desk config --list` shows the clients and how sure we are of each: **verified** means that exact output was run against the client (only Claude Code so far, and only its Windows form; the macOS and Linux form is the documented syntax), **documented** means it follows the client's own documentation but was not run here.
+
+```sh
+npx -y @voyageurworks/handoff-desk config --client cursor --dir ~/handoff > mcp.json
+```
+
+The config goes to standard output and where to put it goes to standard error, so the redirect above is safe. The repository also holds a ready-made [mcp.json](mcp.json) in the same format.
 
 ## Try it without a real agent
 

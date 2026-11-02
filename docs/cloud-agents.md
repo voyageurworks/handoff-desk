@@ -59,6 +59,10 @@ After the agent answers, `status` is `done`, `answered` has a time, and the text
 
 File names look like `2026-01-15 Item 07 - Book the dentist.md`. The agent should not rename or move notes.
 
+## Telegram and Slack heads-ups
+
+Email is not the only way to ring the agent's side. With `HANDOFF_TELEGRAM_*` or `HANDOFF_SLACK_*` set (see the README, "Chat doorbells"), handoff-desk also posts one short message per new note, so an agent or a person who lives in a chat app hears about it at once. The message is only a nudge: the agent still reads the note and answers in it, and nothing typed into the chat is read back.
+
 ## The email heads-up
 
 If you configure the doorbell (`HANDOFF_MAIL_USER`, `HANDOFF_MAIL_APP_PASSWORD`, `HANDOFF_MAIL_TO`), every send also emails the agent. The subject is `[Handoff errand #7] Book the dentist` (`HANDOFF_SUBJECT_PREFIX` changes the word `Handoff`), and the body carries the whole request and the note's path, ending with the instruction to answer under `## Reply`, set the status, then commit and push. An agent that watches a mailbox can act on the email alone, then write its reply into the note.

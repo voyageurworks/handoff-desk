@@ -33,7 +33,9 @@ To rule out the agent, run the stand-in (`node dist/main.js stand-in`) and hand 
 
 ## The doorbell does not ring
 
-- `handoff_send` reports why in its result. "Doorbell not configured" means `HANDOFF_MAIL_USER`, `HANDOFF_MAIL_TO` and a password (`HANDOFF_MAIL_APP_PASSWORD` or `HANDOFF_MAIL_PASSWORD_COMMAND`) are not all set.
+- **Telegram or Slack:** the `chat` part of the result names the problem without printing any secret. Telegram `401` is a wrong or revoked bot token; `400` or `403` usually means the bot has not been written to or added to that chat; Slack `404` or `410` means the webhook was deleted. A value that is not a bot token or a Slack incoming webhook is refused before anything is sent.
+
+- `handoff_send` reports who was told in `notified` (`email`, `telegram`, `slack`) and why anyone was not: `ring` for the email, `chat` for Telegram and Slack. An empty `notified` means nobody has been told yet. "Doorbell not configured" means `HANDOFF_MAIL_USER`, `HANDOFF_MAIL_TO` and a password (`HANDOFF_MAIL_APP_PASSWORD` or `HANDOFF_MAIL_PASSWORD_COMMAND`) are not all set.
 - With Gmail you need 2-Step Verification on and an **app password** from your Google account's security settings. Your normal password will not work and should never be used.
 - Port 465 uses TLS. Any other port must support STARTTLS or the send is refused. The whole send is capped at 45 seconds.
 - The note is always written even when the email fails; the result also includes the email so you can send it another way. A local copy goes to `mail/` (the result says if that copy could not be saved).

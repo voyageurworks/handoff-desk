@@ -7,17 +7,41 @@
     "url": "https://github.com/voyageurworks/handoff-desk",
     "source": "github"
   },
-  "version": "1.0.3",
+  "version": "1.1.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@voyageurworks/handoff-desk",
-      "version": "1.0.3",
-      "transport": { "type": "stdio" },
+      "version": "1.1.0",
+      "transport": {
+        "type": "stdio"
+      },
       "environmentVariables": [
         {
           "name": "HANDOFF_DIR",
           "description": "Folder that holds the desk (the markdown notes). Defaults to a folder named handoff in your home directory.",
+          "isRequired": false
+        },
+        {
+          "name": "HANDOFF_TELEGRAM_BOT_TOKEN",
+          "description": "Optional Telegram doorbell: the bot's token (or use HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "HANDOFF_TELEGRAM_CHAT_ID",
+          "description": "Optional Telegram doorbell: the chat the bot writes to.",
+          "isRequired": false
+        },
+        {
+          "name": "HANDOFF_SLACK_WEBHOOK_URL",
+          "description": "Optional Slack doorbell: an incoming-webhook URL (or use HANDOFF_SLACK_WEBHOOK_COMMAND).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "HANDOFF_NOTIFY_INCLUDE_REQUEST",
+          "description": "Set to 1 to add a shortened request to Telegram and Slack messages. Off by default.",
           "isRequired": false
         }
       ]

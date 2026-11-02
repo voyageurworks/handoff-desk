@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseEnv } from "node:util";
 import type { DoorbellConfig } from "./doorbell.js";
+import type { ChatConfig } from "./notify.js";
 import type { Identity } from "./sync.js";
 
 export type SyncMode = "auto" | "git" | "off";
@@ -10,6 +11,8 @@ export type HandoffConfig = {
   dir: string;
   desk: { deskDir: string };
   doorbell: DoorbellConfig;
+  /** Optional Telegram and Slack doorbells (see notify.ts). Empty unless their settings are set. */
+  chat: ChatConfig;
   mailDir: string;
   /** Folder (inside `dir`) where the agent leaves notes for Claude. */
   inboxDir: string;
@@ -61,6 +64,11 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConf
     dir,
     desk: { deskDir: path.join(dir, "Desk") },
     doorbell: { user: env.HANDOFF_MAIL_USER, pass: env.HANDOFF_MAIL_APP_PASSWORD, passCommand: env.HANDOFF_MAIL_PASSWORD_COMMAND, to: env.HANDOFF_MAIL_TO, host: env.HANDOFF_SMTP_HOST, port: Number.isInteger(port) ? port : undefined },
+    chat: {
+      ...(env.HANDOFF_TELEGRAM_BOT_TOKEN || env.HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND || env.HANDOFF_TELEGRAM_CHAT_ID ? { telegram: { token: env.HANDOFF_TELEGRAM_BOT_TOKEN, tokenCommand: env.HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND, chatId: env.HANDOFF_TELEGRAM_CHAT_ID } } : {}),
+      ...(env.HANDOFF_SLACK_WEBHOOK_URL || env.HANDOFF_SLACK_WEBHOOK_COMMAND ? { slack: { webhook: env.HANDOFF_SLACK_WEBHOOK_URL, webhookCommand: env.HANDOFF_SLACK_WEBHOOK_COMMAND } } : {}),
+      includeRequest: ["1", "true", "yes", "on"].includes((env.HANDOFF_NOTIFY_INCLUDE_REQUEST ?? "").toLowerCase()),
+    },
     mailDir: env.HANDOFF_MAIL_DIR ? expandHome(env.HANDOFF_MAIL_DIR) : path.join(dir, "mail"),
     inboxDir: env.HANDOFF_INBOX_DIR || "Inbox",
     sync: mode === "git" || mode === "off" ? mode : "auto",

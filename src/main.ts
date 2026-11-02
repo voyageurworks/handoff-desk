@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { configCommand } from "./clientConfig.js";
 import { expandHome, loadConfig, syncEnv } from "./config.js";
 import { initDesk } from "./init.js";
 import { buildServer } from "./server.js";
 import { runStandIn } from "./standin.js";
 import { detectSync, ensureClone, git, type SyncHandle } from "./sync.js";
 
-const USAGE = "Usage: handoff-desk [init [dir] | stand-in [--once] [--git]]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing";
+const USAGE = "Usage: handoff-desk [init [dir] | stand-in [--once] [--git] | config --client <name> | config --list]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)";
 
 const [command, ...rest] = process.argv.slice(2);
 const config = loadConfig();
@@ -53,6 +54,12 @@ if (command === undefined) {
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
+} else if (command === "config") {
+  // Prints a ready-made settings block for an MCP client: the config on stdout (so it can be redirected), where it goes on stderr.
+  const result = configCommand(rest);
+  if (result.out) process.stdout.write(result.out);
+  if (result.err) console.error(result.err);
+  process.exitCode = result.code;
 } else {
   console.error(USAGE);
   process.exit(2);

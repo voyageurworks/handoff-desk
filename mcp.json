@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "handoff": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@voyageurworks/handoff-desk"
+      ],
+      "env": {
+        "HANDOFF_DIR": "~/handoff"
+      }
+    }
+  }
+}
