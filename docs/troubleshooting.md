@@ -7,6 +7,16 @@
 - Is Node 22 or newer on the client's `PATH`? Run `node --version`. A client started from a launcher may not see the Node you use in a terminal; put the full path to `node` in the command if needed.
 - Restart the client after editing its config. Claude Code: `claude mcp list` shows whether the server connected.
 
+## The client says disconnected, failed or timed out the first time
+
+The first start of `npx -y @voyageurworks/handoff-desk` downloads the package, and some clients give up after a few seconds. We saw exactly this with Gemini CLI on a cold cache: "Disconnected", and "Connected" a minute later. Run `npx -y @voyageurworks/handoff-desk config --list` once in a terminal (it fills the npm cache), then restart the client. If it still fails, run `handoff-desk doctor`.
+
+## A Telegram or Slack message did not arrive
+
+1. Run `handoff-desk doctor --client <your client>` (or `doctor` if the settings are in your terminal's environment): it checks the token and chat id shapes, the webhook, and whether anything is waiting to be re-sent. `doctor --ping` sends a test message and shows the reason it was refused.
+2. `handoff_send` returns `notified` and, for a channel that did not ring, a reason. 401, 403 and 404 mean the token, chat or webhook is wrong or gone. 429 and 5xx, a timeout or no network are tried again by themselves (on the next start and the next send, with growing waits, up to 5 times or 3 days), and the message then starts with "Re-sent".
+3. A Telegram bot cannot write first: send it a message (or add it to the group) once. A Slack webhook is tied to one channel.
+
 ## `claude mcp add` says "missing required argument"
 
 You are probably in Windows PowerShell 5.1, which drops a bare `--`. Write it in quotes: `claude mcp add handoff -e HANDOFF_DIR="$HOME/handoff" '--' node C:/path/to/handoff-desk/dist/main.js`. On macOS and Linux shells the bare `--` is fine.

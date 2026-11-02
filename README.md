@@ -162,7 +162,9 @@ Any client that can run a stdio MCP server works. You give it a command, its arg
 | VS Code (Copilot agent mode) | `.vscode/mcp.json`, see [docs/clients.md](docs/clients.md#vs-code-github-copilot) |
 | Codex (CLI and IDE) | `codex mcp add` or `config.toml`, see [docs/clients.md](docs/clients.md#codex) |
 | Claude Desktop | `claude_desktop_config.json`, see [docs/clients.md](docs/clients.md#claude-desktop) |
-| Windsurf, Gemini CLI, others | same shape, see [docs/clients.md](docs/clients.md#windsurf-gemini-cli-and-others) |
+| Gemini CLI, OpenCode, Kilo Code, Kiro, Amp, Warp, JetBrains, Continue, Goose, Zed, Windsurf, LM Studio, Cline, Roo Code, Amazon Q | `handoff-desk config --client <name>` or `install`, see [docs/clients.md](docs/clients.md#every-other-client) |
+
+Fastest: `npx -y @voyageurworks/handoff-desk install --client cursor` shows what it would add to Cursor's settings (add `--write` to do it; Gemini CLI, LM Studio, Kiro and Amp work the same way). `npx -y @voyageurworks/handoff-desk doctor` checks your setup and says what to fix.
 
 ## Connect your agent
 
@@ -172,7 +174,7 @@ Pick the line that matches where your agent runs.
 2. **In the cloud.** A cloud agent cannot see your folder, so make the desk a **private git repository** the agent can read and push to. Put the desk folder inside a clone of it. Syncing turns on by itself (`HANDOFF_SYNC=auto`) when the folder is a git work tree with an upstream branch. Details, the exact note format and the rules to give the agent: [docs/cloud-agents.md](docs/cloud-agents.md).
 3. **Watching a mailbox.** The optional doorbell email carries the whole request. Set the mail variables below. Never use your normal password: use an app password, ideally fetched by a command so no file holds it ([docs/keeping-secrets.md](docs/keeping-secrets.md)).
 
-Whichever you pick, give the agent the rules in your `handoff.md` and tell it to write its answer under `## Reply` and set `status: done`.
+Whichever you pick, give the agent the rules in your `handoff.md` and tell it to write its answer under `## Reply` and set `status: done`. A ready-made instruction file for the agent, usable as a Claude Code skill or pasted into any other agent's instructions, is in [docs/agent-contract.md](docs/agent-contract.md).
 
 ### Compatibility
 
@@ -181,6 +183,8 @@ Whichever you pick, give the agent the rules in your `handoff.md` and tell it to
 | Bundled stand-in (`stand-in` command) | Tested on every change |
 | Operating systems and shells | Tests run on Linux, macOS and Windows on every change. The quick start runs under bash and zsh on Linux and macOS, and in Windows PowerShell 5.1 by hand |
 | Cursor, VS Code (Copilot), Claude Desktop, Codex | The config examples in [docs/clients.md](docs/clients.md) are launched by a test and complete an MCP handshake. The editors themselves are not run in CI |
+| Gemini CLI, OpenCode, Kilo Code (CLI) | Started the server from the config `handoff-desk config` prints and showed it connected, on Windows 11 (versions in [docs/clients.md](docs/clients.md#every-other-client)). Not re-run in CI, and not run on macOS or Linux |
+| Telegram and Slack doorbells | The built program was run against a local stand-in for both services: the exact requests, 429, 500, a dropped connection and nothing listening. Not yet against live accounts |
 | One real cloud agent, over git and email | Five rounds passed on 2026-10-26. A re-run the next day without the email doorbell was only partly answered, because that agent checks the desk on a schedule; with the doorbell on it is expected to react sooner but that has not been re-tested |
 | Any other agent that can read markdown files in a folder or repository | Expected to work, not tested. [docs/live-acceptance.md](docs/live-acceptance.md) is the checklist for trying yours |
 
@@ -222,6 +226,7 @@ Set these as environment variables in your MCP client's config.
 | `HANDOFF_TELEGRAM_BOT_TOKEN`, `HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND` | none | Optional Telegram doorbell: the bot's token, or a command that prints it (see [Chat doorbells](#chat-doorbells-telegram-and-slack)) |
 | `HANDOFF_TELEGRAM_CHAT_ID` | none | The chat the bot writes to (a number; a group's starts with `-`; or a public `@channel`) |
 | `HANDOFF_SLACK_WEBHOOK_URL`, `HANDOFF_SLACK_WEBHOOK_COMMAND` | none | Optional Slack doorbell: an incoming-webhook URL (`https://hooks.slack.com/services/...`), or a command that prints it |
+| `HANDOFF_STATE_DIR` | `~/.handoff-desk/state` | Where the list of chat doorbells to re-send is kept (on this computer only, never in the desk or git) |
 | `HANDOFF_NOTIFY_INCLUDE_REQUEST` | off | `1` adds the first 500 characters of the request to the Telegram and Slack messages. By default they carry only the id, type, title and note name |
 
 ## Chat doorbells (Telegram and Slack)
@@ -234,11 +239,13 @@ Besides the email, handoff-desk can post a short message to Telegram and/or Slac
 - The bot token and the webhook URL are secrets: keep them in `HANDOFF_ENV_FILE`, or fetch them with a command, like the mail password ([docs/keeping-secrets.md](docs/keeping-secrets.md)). They are never printed, logged or returned.
 - `handoff_send` returns `notified`: the list of doorbells that actually rang (`email`, `telegram`, `slack`), and a `chat` object with the reason for any that did not. If `notified` is empty nobody has been told yet.
 - Each service gets 10 seconds, all doorbells ring at the same time, and a failure never loses the note. There is no proxy support yet.
-- These doorbells were tested against the services' documented request format with a fake network, not against live accounts; try one with your own bot or webhook and report anything odd.
+- **Nothing is silently lost.** A chat doorbell that fails for a reason that can pass (no network, a timeout, 429, a 5xx) is remembered as a pointer to the note (never its text) in a small list kept on this computer, outside the desk and git. It is re-sent when the server starts and on the next send, after 1, 5 and 30 minutes, 2 and 6 hours, at most 5 times or 3 days, marked `Re-sent`, and dropped if the note was answered meanwhile. `handoff_send` then returns `resent`. A wrong token, chat or webhook (401, 403, 404) is not retried. Email already keeps its own pending copy.
+- `handoff-desk doctor --ping` sends one test message to each configured channel and shows why one was refused.
+- Tested: the built program against a local stand-in for both services (the exact requests, 429, 500, a dropped connection, nothing listening, no secret in any output). **Not yet tested against live accounts**; try one with your own bot or webhook and report anything odd.
 
 ## Generate a client config
 
-`handoff-desk config --client <name>` prints the settings block for an MCP client, with the right key for that client (VS Code, Zed and Codex differ from the rest) and `cmd /c` for `npx` on Windows. `handoff-desk config --list` shows the clients and how sure we are of each: **verified** means that exact output was run against the client (only Claude Code so far, and only its Windows form; the macOS and Linux form is the documented syntax), **documented** means it follows the client's own documentation but was not run here.
+`handoff-desk config --client <name>` prints the settings block for an MCP client, with the right key for that client (VS Code, Zed, Codex, OpenCode, Kilo Code, Amp, Continue and Goose differ from the rest) and `cmd /c` for `npx` on Windows. `handoff-desk config --list` shows the 20 clients and how sure we are of each: **verified** means that exact output was run against the real client and it started the server (Claude Code, Gemini CLI, OpenCode and the Kilo CLI, all on Windows 11), **read** means the client's own command read it back correctly without starting it (Codex), **documented** means it follows the client's own documentation but was not run here. The line after the config says exactly what was run.
 
 ```sh
 npx -y @voyageurworks/handoff-desk config --client cursor --dir ~/handoff > mcp.json

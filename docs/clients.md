@@ -98,14 +98,53 @@ Add to `claude_desktop_config.json` (Settings, Developer, Edit Config):
 }
 ```
 
-## Windsurf, Gemini CLI and others
+## Every other client
 
-Most other clients use the same `mcpServers` shape as Cursor:
+The quickest way for any client is to let handoff-desk print (or write) the settings:
 
-- Windsurf: `~/.codeium/windsurf/mcp_config.json`
-- Gemini CLI: `~/.gemini/settings.json`
+```sh
+npx -y @voyageurworks/handoff-desk config --list                 # every client and how sure we are of it
+npx -y @voyageurworks/handoff-desk config --client opencode      # prints the block; the file to put it in goes to stderr
+npx -y @voyageurworks/handoff-desk install --client gemini-cli   # dry run; add --write to edit the file (see below)
+```
 
-If your client can run a stdio MCP server, give it the command, arguments and environment from the table at the top.
+Each client has its own shape; the generator knows them (VS Code `servers`, Zed `context_servers`, OpenCode and Kilo Code `mcp` with the command as one array, Amp `amp.mcpServers`, Codex TOML, Continue and Goose YAML) and puts `cmd /c` before `npx` on Windows. The last column says what was actually run, never more.
+
+| Client | Where it goes | `install` can write it | Evidence |
+| --- | --- | --- | --- |
+| Claude Code | `claude mcp add` (above) | no | verified, Windows |
+| Gemini CLI | `~/.gemini/settings.json` | yes | verified: `gemini mcp list` showed it connected (Gemini CLI 0.66.0, Windows) |
+| OpenCode | `opencode.json` (project) or the global OpenCode config | no | verified: `opencode mcp list` showed it connected (1.19.5, Windows) |
+| Kilo Code | `~/.config/kilo/kilo.jsonc` or `kilo.jsonc` / `.kilo/kilo.jsonc` in a project | no | verified with the Kilo CLI: `kilo mcp list` showed it connected (7.8.18, Windows); the editor extension was not run |
+| Codex | `~/.codex/config.toml` | no | read back by `codex mcp get` (0.166.0, Windows); that command does not start the server |
+| Cursor | `~/.cursor/mcp.json` | yes | documented |
+| Kiro | `~/.kiro/settings/mcp.json` or `.kiro/settings/mcp.json` | yes | documented |
+| Amp | `~/.config/amp/settings.json` (a workspace `.amp/settings.json` needs your approval in Amp) | yes | documented |
+| LM Studio | `~/.lmstudio/mcp.json` | yes | documented |
+| Claude Desktop | `claude_desktop_config.json` (Settings, Developer, Edit Config) | no | documented |
+| Windsurf (Devin Desktop) | `~/.config/devin/mcp_config.json`, older `~/.codeium/windsurf/mcp_config.json` | no | documented |
+| Warp | Settings, Agents, MCP servers, + Add, then paste the JSON | no | documented |
+| JetBrains AI Assistant | Settings, Tools, AI Assistant, Model Context Protocol (MCP), Add | no | documented; JetBrains' page shows `command` and `args`, and `env` is the common MCP key |
+| Continue | `.continue/mcpServers/handoff.yaml` | no | documented |
+| Goose | `extensions:` in `config.yaml`, or Extensions, Add custom extension | no | documented |
+| Zed | `context_servers` in Zed's settings file | no | documented |
+| Cline, Roo Code, Amazon Q | see `config --client <name>` | no | documented |
+
+"Documented" means the shape follows the client's own documentation and has not been run here. If one of them does not work for you, please open an issue with the client's name and version.
+
+### `install`: let handoff-desk edit the file
+
+`handoff-desk install --client <name>` adds the handoff entry to the client's own settings file. It is careful because it changes a file outside this project:
+
+- **Dry run by default.** It prints the file it would change and only the handoff entry, never the rest of the file. `--write` makes the change.
+- It adds one entry and leaves the rest of the file as it was (other servers, other settings, the indentation and the line endings), makes a timestamped backup first (never over an earlier one), and writes through a temporary file.
+- It refuses what it cannot read exactly: comments or a trailing comma (so JSONC files), a link, a folder where the file should be. It stops if the file changes while it works.
+- A `handoff` entry that is already there and differs is left alone unless you pass `--force`; then the command and arguments are updated and everything else in the entry, including secrets already in its `env`, is kept.
+- It can edit Cursor, Gemini CLI, LM Studio, Kiro and Amp. For every other client it tells you to use `config`.
+
+### Check your setup
+
+`handoff-desk doctor` checks Node, the desk folder, `handoff.md`, git, and the email, Telegram and Slack settings, and says what to fix. It never prints a secret and never runs a `*_COMMAND` setting. `doctor --client cursor` reads the handoff entry's settings from that client's file (a terminal does not have the settings a client passes), and `doctor --ping` sends one clearly labelled test message to Telegram and Slack.
 
 ## Check that it works
 

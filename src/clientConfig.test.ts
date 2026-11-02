@@ -15,10 +15,14 @@ describe("the client table", () => {
     expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "amp", "claude-code", "claude-desktop", "cline", "codex", "continue", "cursor", "gemini-cli", "goose", "jetbrains", "kilo-code", "kiro", "lm-studio", "opencode", "roo-code", "vscode", "warp", "windsurf", "zed"]);
     for (const client of CLIENTS) {
       expect(client.where.length, client.id).toBeGreaterThan(5);
-      expect(["verified", "documented"], client.id).toContain(client.evidence);
+      expect(["verified", "read", "documented"], client.id).toContain(client.evidence);
+      // Anything stronger than "documented" says what was run; nothing else carries a claim.
+      expect(Boolean(client.checked), client.id).toBe(client.evidence !== "documented");
     }
-    // Only a client that was really run is called verified.
-    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id)).toEqual(["claude-code"]);
+    // Only a client that was really run is called verified: the server connected (Claude Code, Gemini CLI, OpenCode, Kilo CLI).
+    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id).sort()).toEqual(["claude-code", "gemini-cli", "kilo-code", "opencode"]);
+    // Read back by the client's own command, which does not start servers.
+    expect(CLIENTS.filter(client => client.evidence === "read").map(client => client.id)).toEqual(["codex"]);
   });
 });
 
@@ -127,12 +131,17 @@ describe("configCommand", () => {
     for (const client of CLIENTS) expect(result.out).toContain(client.id);
     expect(result.out).toMatch(/claude-code\s+.*verified/);
     expect(result.out).toMatch(/cursor\s+.*documented/);
+    expect(result.out).toMatch(/codex\s+.*\[read\]/);
+    expect(result.out).toMatch(/gemini-cli\s+.*\[verified\]/);
   });
   it("prints only the config on stdout and says where it goes on stderr", () => {
     const result = configCommand(["--client", "cursor"], "linux");
     expect(result.code).toBe(0);
     expect(() => JSON.parse(result.out!)).not.toThrow();
     expect(result.err).toMatch(/mcp\.json/);
+    expect(result.err).toMatch(/first start downloads the package/i);
+    expect(configCommand(["--client", "gemini-cli"], "linux").err).toMatch(/Checked: Gemini CLI 0\.66\.0/);
+    expect(result.err).not.toMatch(/Checked:/);
   });
   it("honours --dir and --windows, and defaults the form to the platform", () => {
     expect(JSON.parse(configCommand(["--client", "cursor", "--dir", "/data/desk"], "linux").out!).mcpServers.handoff.env.HANDOFF_DIR).toBe("/data/desk");

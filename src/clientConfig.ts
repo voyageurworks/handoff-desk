@@ -2,8 +2,10 @@
  * `handoff-desk config --client <name>`: the settings block for each MCP client, from one table.
  *
  * Most clients take the same JSON under `mcpServers`; a few differ (VS Code `servers`, Zed `context_servers`, Codex TOML), and
- * Windows needs `npx` run through `cmd /c`. `evidence` is honest: "verified" means the exact output was run against that client;
- * "documented" means the shape comes from the client's own documentation (or a dated roundup of it) and was not run here.
+ * Windows needs `npx` run through `cmd /c`. `evidence` is honest: "verified" means the exact output was run against the real
+ * client and it started the server; "read" means the client's own command read the output back correctly but does not start
+ * servers; "documented" means the shape comes from the client's own documentation and was not run here. `checked` says exactly
+ * what was run (client version, system, command).
  * See docs/projects/handoff-mcp/agent-platform-research.md in the maintainers' notes for sources and dates.
  */
 export const PACKAGE = "@voyageurworks/handoff-desk";
@@ -12,7 +14,9 @@ export type ClientOptions = { dir: string; windows: boolean };
 export type ClientSpec = {
   id: string;
   name: string;
-  evidence: "verified" | "documented";
+  evidence: "verified" | "read" | "documented";
+  /** What was run for "verified" and "read": the client version, the system and the command. */
+  checked?: string;
   /** Where the text goes, in words. Printed on stderr so stdout stays pasteable. */
   where: string;
   render(options: ClientOptions): string;
@@ -37,7 +41,7 @@ const localEntry = (options: ClientOptions) => ({ type: "local", command: [launc
 
 export const CLIENTS: ClientSpec[] = [
   {
-    id: "claude-code", name: "Claude Code", evidence: "verified",
+    id: "claude-code", name: "Claude Code", evidence: "verified", checked: "Claude Code 2.1 on Windows 11 (claude mcp add, then the server connected); macOS and Linux not run.",
     where: "Run this command in a terminal. Verified on Windows (PowerShell, with the quoted double dash and cmd /c); the macOS and Linux form follows Claude Code's documented syntax and was not run here.",
     render: options => options.windows
       ? `claude mcp add handoff -e HANDOFF_DIR="${options.dir}" '--' cmd /c npx -y '${PACKAGE}'\n`
@@ -51,9 +55,9 @@ export const CLIENTS: ClientSpec[] = [
     render: options => json({ servers: { handoff: { type: "stdio", ...entry(options) } } }),
   },
   { id: "windsurf", name: "Windsurf (Devin Desktop)", evidence: "documented", where: "~/.config/devin/mcp_config.json (Windows %APPDATA%\\devin\\mcp_config.json); older versions: ~/.codeium/windsurf/mcp_config.json.", render: under("mcpServers") },
-  { id: "gemini-cli", name: "Gemini CLI", evidence: "documented", where: "~/.gemini/settings.json for all projects, or .gemini/settings.json in one project.", render: under("mcpServers"), install: { file: [".gemini", "settings.json"], key: "mcpServers" } },
+  { id: "gemini-cli", name: "Gemini CLI", evidence: "verified", checked: "Gemini CLI 0.66.0 on Windows 11: `gemini mcp list` showed the server connected (with folder trust off in a throwaway home); macOS and Linux not run.", where: "~/.gemini/settings.json for all projects, or .gemini/settings.json in one project.", render: under("mcpServers"), install: { file: [".gemini", "settings.json"], key: "mcpServers" } },
   {
-    id: "codex", name: "Codex (CLI and IDE)", evidence: "documented",
+    id: "codex", name: "Codex (CLI and IDE)", evidence: "read", checked: "Codex 0.166.0 on Windows 11: `codex mcp get handoff` read the file back correctly (stdio, the command, the arguments, the env); that command does not start the server.",
     where: "~/.codex/config.toml (or .codex/config.toml in a trusted project), or `codex mcp add handoff -- <command>`.",
     render: options => {
       const { command, args } = launch(options);
@@ -64,12 +68,12 @@ export const CLIENTS: ClientSpec[] = [
   { id: "cline", name: "Cline", evidence: "documented", where: "cline_mcp_settings.json (MCP Servers icon, Configure tab, Configure MCP Servers).", render: under("mcpServers") },
   { id: "roo-code", name: "Roo Code", evidence: "documented", where: "MCP settings, Edit Global MCP, or .roo/mcp.json in one project (the project file wins).", render: under("mcpServers") },
   {
-    id: "opencode", name: "OpenCode", evidence: "documented",
+    id: "opencode", name: "OpenCode", evidence: "verified", checked: "OpenCode 1.19.5 on Windows 11: `opencode mcp list` showed the server connected; macOS and Linux not run.",
     where: "opencode.json or opencode.jsonc (your project root or your global OpenCode config). OpenCode's key is `mcp`, a local server's command is one array, and the environment key is `environment`.",
     render: options => json({ $schema: "https://opencode.ai/config.json", mcp: { handoff: localEntry(options) } }),
   },
   {
-    id: "kilo-code", name: "Kilo Code", evidence: "documented",
+    id: "kilo-code", name: "Kilo Code", evidence: "verified", checked: "Kilo CLI 7.8.18 on Windows 11, reading $XDG_CONFIG_HOME/kilo/kilo.jsonc: `kilo mcp list` showed the server connected; the editor extension was not run.",
     where: "kilo.jsonc: ~/.config/kilo/kilo.jsonc for every project, or kilo.jsonc (or .kilo/kilo.jsonc) in one project; the project file wins. Kilo's key is `mcp`; merge it into the file if it already has one. The settings screen (Agent Behaviour, MCP Servers) edits the same file.",
     render: options => json({ mcp: { handoff: localEntry(options) } }),
   },
@@ -137,5 +141,5 @@ export function configCommand(args: string[], platform: string = process.platfor
   const client = CLIENTS.find(candidate => candidate.id === id);
   if (!client) return { err: `Unknown client "${id}". Choose one of: ${CLIENTS.map(candidate => candidate.id).join(", ")}.`, code: 1 };
   const options = { dir: value("--dir") ?? "~/handoff", windows: args.includes("--windows") || platform === "win32" };
-  return { out: client.render(options), err: `${client.name} [${client.evidence}]: ${client.where}`, code: 0 };
+  return { out: client.render(options), err: `${client.name} [${client.evidence}]: ${client.where}${client.checked ? `\nChecked: ${client.checked}` : ""}\nThe first start downloads the package; if the client reports a timeout, run \`npx -y ${PACKAGE} config --list\` once and restart the client.`, code: 0 };
 }
