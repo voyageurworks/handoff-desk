@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.0.1 (2026-11-02)
+## 1.0.2 (2026-11-02)
+
+- Version 1.0.1 was tagged but never published to npm (its release job failed before the publish step), so 1.0.2 is the first version published from GitHub Actions.
 
 - Releases now go through a two-job workflow with an approval step, and are published from GitHub Actions with a provenance statement (npm trusted publishing). No change to the server itself.
 - More search keywords in `package.json`; the npm page and badges are fixed.
