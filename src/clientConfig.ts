@@ -16,6 +16,11 @@ export type ClientSpec = {
   /** Where the text goes, in words. Printed on stderr so stdout stays pasteable. */
   where: string;
   render(options: ClientOptions): string;
+  /**
+   * Set only for a client whose user settings file is strict JSON in a documented place under the home folder; `handoff-desk
+   * install` edits exactly that file and key (see install.ts). Every other client is config-only.
+   */
+  install?: { file: string[]; key: string };
 };
 
 const launch = ({ windows }: ClientOptions) => (windows ? { command: "cmd", args: ["/c", "npx", "-y", PACKAGE] } : { command: "npx", args: ["-y", PACKAGE] });
@@ -39,14 +44,14 @@ export const CLIENTS: ClientSpec[] = [
       : `claude mcp add handoff -e HANDOFF_DIR="${options.dir}" -- npx -y ${PACKAGE}\n`,
   },
   { id: "claude-desktop", name: "Claude Desktop", evidence: "documented", where: "claude_desktop_config.json (Settings, Developer, Edit Config). Local servers only; restart the app.", render: under("mcpServers") },
-  { id: "cursor", name: "Cursor", evidence: "documented", where: "~/.cursor/mcp.json for all projects, or .cursor/mcp.json in one project.", render: under("mcpServers") },
+  { id: "cursor", name: "Cursor", evidence: "documented", where: "~/.cursor/mcp.json for all projects, or .cursor/mcp.json in one project.", render: under("mcpServers"), install: { file: [".cursor", "mcp.json"], key: "mcpServers" } },
   {
     id: "vscode", name: "VS Code (GitHub Copilot agent mode)", evidence: "documented",
     where: "Command palette: MCP: Open User Configuration (mcp.json), or .vscode/mcp.json in one project. VS Code's key is `servers`.",
     render: options => json({ servers: { handoff: { type: "stdio", ...entry(options) } } }),
   },
   { id: "windsurf", name: "Windsurf (Devin Desktop)", evidence: "documented", where: "~/.config/devin/mcp_config.json (Windows %APPDATA%\\devin\\mcp_config.json); older versions: ~/.codeium/windsurf/mcp_config.json.", render: under("mcpServers") },
-  { id: "gemini-cli", name: "Gemini CLI", evidence: "documented", where: "~/.gemini/settings.json for all projects, or .gemini/settings.json in one project.", render: under("mcpServers") },
+  { id: "gemini-cli", name: "Gemini CLI", evidence: "documented", where: "~/.gemini/settings.json for all projects, or .gemini/settings.json in one project.", render: under("mcpServers"), install: { file: [".gemini", "settings.json"], key: "mcpServers" } },
   {
     id: "codex", name: "Codex (CLI and IDE)", evidence: "documented",
     where: "~/.codex/config.toml (or .codex/config.toml in a trusted project), or `codex mcp add handoff -- <command>`.",
@@ -55,7 +60,7 @@ export const CLIENTS: ClientSpec[] = [
       return `[mcp_servers.handoff]\ncommand = ${toml(command)}\nargs = [${args.map(toml).join(", ")}]\n\n[mcp_servers.handoff.env]\nHANDOFF_DIR = ${toml(options.dir)}\n`;
     },
   },
-  { id: "lm-studio", name: "LM Studio", evidence: "documented", where: "~/.lmstudio/mcp.json (Program tab, Install, Edit mcp.json).", render: under("mcpServers") },
+  { id: "lm-studio", name: "LM Studio", evidence: "documented", where: "~/.lmstudio/mcp.json (Program tab, Install, Edit mcp.json).", render: under("mcpServers"), install: { file: [".lmstudio", "mcp.json"], key: "mcpServers" } },
   { id: "cline", name: "Cline", evidence: "documented", where: "cline_mcp_settings.json (MCP Servers icon, Configure tab, Configure MCP Servers).", render: under("mcpServers") },
   { id: "roo-code", name: "Roo Code", evidence: "documented", where: "MCP settings, Edit Global MCP, or .roo/mcp.json in one project (the project file wins).", render: under("mcpServers") },
   {
@@ -72,11 +77,13 @@ export const CLIENTS: ClientSpec[] = [
     id: "kiro", name: "Kiro", evidence: "documented",
     where: "~/.kiro/settings/mcp.json for every workspace, or .kiro/settings/mcp.json in one workspace (the workspace file wins). Kiro also accepts disabled, autoApprove and disabledTools per server; none is needed here.",
     render: under("mcpServers"),
+    install: { file: [".kiro", "settings", "mcp.json"], key: "mcpServers" },
   },
   {
     id: "amp", name: "Amp", evidence: "documented",
     where: "~/.config/amp/settings.json for every project (no approval needed), or .amp/settings.json in one project (Amp asks you to approve a workspace server the first time). Merge the amp.mcpServers key into the file if it already has one.",
     render: options => json({ "amp.mcpServers": { handoff: entry(options) } }),
+    install: { file: [".config", "amp", "settings.json"], key: "amp.mcpServers" },
   },
   {
     id: "warp", name: "Warp", evidence: "documented",

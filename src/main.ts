@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import os from "node:os";
 import { configCommand } from "./clientConfig.js";
 import { expandHome, loadConfig, syncEnv } from "./config.js";
 import { initDesk } from "./init.js";
+import { INSTALLABLE, installClient } from "./install.js";
 import { buildServer } from "./server.js";
 import { runStandIn } from "./standin.js";
 import { detectSync, ensureClone, git, type SyncHandle } from "./sync.js";
 
-const USAGE = "Usage: handoff-desk [init [dir] | stand-in [--once] [--git] | config --client <name> | config --list]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)";
+const USAGE = "Usage: handoff-desk [init [dir] | stand-in [--once] [--git] | config --client <name> | config --list | install --client <name>]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)\n  install        add the server to a client's own settings file (dry run unless --write)";
 
 const [command, ...rest] = process.argv.slice(2);
 const config = loadConfig();
@@ -59,6 +61,17 @@ if (command === undefined) {
   const result = configCommand(rest);
   if (result.out) process.stdout.write(result.out);
   if (result.err) console.error(result.err);
+  process.exitCode = result.code;
+} else if (command === "install") {
+  // Edits one client's settings file: a dry run unless --write, with a backup, and only for clients whose file is plain JSON.
+  const value = (flag: string) => { const at = rest.indexOf(flag); return at >= 0 ? rest[at + 1] : undefined; };
+  const id = value("--client");
+  if (!id) {
+    console.error(`Usage: handoff-desk install --client <name> [--dir <desk folder>] [--write] [--force]\n  Clients it can edit: ${INSTALLABLE.join(", ")}. Add --write to change the file; without it nothing is changed.`);
+    process.exit(2);
+  }
+  const result = await installClient(id, { home: os.homedir(), dir: value("--dir") ?? "~/handoff", windows: rest.includes("--windows") || process.platform === "win32", write: rest.includes("--write"), force: rest.includes("--force") });
+  (result.code === 0 ? console.log : console.error)(result.message);
   process.exitCode = result.code;
 } else {
   console.error(USAGE);
