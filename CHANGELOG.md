@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Docs only: Kiro, Warp, the JetBrains IDEs and Zed are listed as "not supported yet" (not tested) in `README.md` and `docs/clients.md`, and are out of the main client lists. Their `config` and `install` output is unchanged.
 - Docs only: `SECURITY.md` now covers the chat doorbells, the retry list, `install`, `doctor` and the `from:` line; a one-line-each table for Claude Code, Cursor and Codex at the top of `docs/clients.md`; the agent contract page explains the `from:` values. Checked on Node 24.20 with deprecation warnings turned into errors: the server, the CLI commands and all 354 tests run clean.
 
 ## 1.2.1 (2026-11-03)

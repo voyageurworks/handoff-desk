@@ -172,9 +172,11 @@ Any client that can run a stdio MCP server works. You give it a command, its arg
 | VS Code (Copilot agent mode) | `.vscode/mcp.json`, see [docs/clients.md](docs/clients.md#vs-code-github-copilot) |
 | Codex (CLI and IDE) | `codex mcp add` or `config.toml`, see [docs/clients.md](docs/clients.md#codex) |
 | Claude Desktop | `claude_desktop_config.json`, see [docs/clients.md](docs/clients.md#claude-desktop) |
-| Gemini CLI, OpenCode, Kilo Code, Kiro, Amp, Warp, JetBrains, Continue, Goose, Zed, Windsurf, LM Studio, Cline, Roo Code, Amazon Q | `handoff-desk config --client <name>` or `install`, see [docs/clients.md](docs/clients.md#every-other-client) |
+| Gemini CLI, OpenCode, Kilo Code, Amp, Continue, Goose, Junie CLI, Windsurf, LM Studio, Cline, Roo Code, Amazon Q | `handoff-desk config --client <name>` or `install`, see [docs/clients.md](docs/clients.md#every-other-client) |
 
-Fastest: `npx -y @voyageurworks/handoff-desk install --client cursor` shows what it would add to Cursor's settings (add `--write` to do it; Gemini CLI, LM Studio, Kiro and Amp work the same way). `npx -y @voyageurworks/handoff-desk doctor` checks your setup and says what to fix.
+Fastest: `npx -y @voyageurworks/handoff-desk install --client cursor` shows what it would add to Cursor's settings (add `--write` to do it; Gemini CLI, LM Studio and Amp work the same way). `npx -y @voyageurworks/handoff-desk doctor` checks your setup and says what to fix.
+
+**Not supported yet:** Kiro, Warp, the JetBrains IDEs (the Junie CLI above was run) and Zed. `config --client` still prints a block for each from the client's own documentation, but none has been run, so expect to adjust it ([docs/clients.md](docs/clients.md#not-supported-yet)).
 
 ## Connect your agent
 

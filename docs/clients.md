@@ -127,7 +127,7 @@ npx -y @voyageurworks/handoff-desk config --client opencode      # prints the bl
 npx -y @voyageurworks/handoff-desk install --client gemini-cli   # dry run; add --write to edit the file (see below)
 ```
 
-Each client has its own shape; the generator knows them (VS Code `servers`, Zed `context_servers`, OpenCode and Kilo Code `mcp` with the command as one array, Amp `amp.mcpServers`, Codex TOML, Continue and Goose YAML) and puts `cmd /c` before `npx` on Windows. The last column says what was actually run, never more.
+Each client has its own shape; the generator knows them (VS Code `servers`, OpenCode and Kilo Code `mcp` with the command as one array, Amp `amp.mcpServers`, Codex TOML, Continue and Goose YAML) and puts `cmd /c` before `npx` on Windows. The last column says what was actually run, never more.
 
 | Client | Where it goes | `install` can write it | Evidence |
 | --- | --- | --- | --- |
@@ -137,20 +137,27 @@ Each client has its own shape; the generator knows them (VS Code `servers`, Zed 
 | Kilo Code | `~/.config/kilo/kilo.jsonc` or `kilo.jsonc` / `.kilo/kilo.jsonc` in a project | no | verified with the Kilo CLI: `kilo mcp list` showed it connected (7.8.18, Windows); the editor extension was not run |
 | Codex | `~/.codex/config.toml` | no | verified: `codex exec` started the server, completed the handshake and offered all 8 tools to a local stand-in model (0.166.0, Windows); Codex answering notes as the agent was not run |
 | Cursor | `~/.cursor/mcp.json` | yes | documented |
-| Kiro | `~/.kiro/settings/mcp.json` or `.kiro/settings/mcp.json` | yes | documented |
 | Amp | `~/.config/amp/settings.json` (a workspace `.amp/settings.json` needs your approval in Amp) | yes | read back by `amp mcp list` (0.0.1793664053, Windows); that command does not start the server, and `amp mcp doctor` needs a login |
 | LM Studio | `~/.lmstudio/mcp.json` | yes | documented |
 | Claude Desktop | `claude_desktop_config.json` (Settings, Developer, Edit Config) | no | documented |
 | Windsurf (Devin Desktop) | `~/.config/devin/mcp_config.json`, older `~/.codeium/windsurf/mcp_config.json` | no | documented |
-| Warp | Settings, Agents, MCP servers, + Add, then paste the JSON | no | documented |
 | Junie CLI (JetBrains) | `~/.junie/mcp/mcp.json` or `.junie/mcp/mcp.json`, or a folder passed with `--mcp-location` | no | verified: started the server, completed the handshake and offered the tools to a local stand-in model (1468.30, Windows; the JetBrains IDEs were not run, and its JVM ignores HOME and USERPROFILE, so set `JUNIE_HOME` when testing) |
-| JetBrains AI Assistant | Settings, Tools, AI Assistant, Model Context Protocol (MCP), Add | no | documented; JetBrains' page shows `command` and `args`, and `env` is the common MCP key |
 | Continue | `mcpServers:` in the `config.yaml` you pass to the CLI (`cn --config`), or `.continue/mcpServers/handoff.yaml` in the editor extension | no | verified with the Continue CLI: it started the server, completed the handshake and offered all 8 tools to a local stand-in model (1.5.47, Windows); the CLI did not read the folder file, and the editor extension was not run |
 | Goose | `extensions:` in `config.yaml`, or Extensions, Add custom extension | no | verified: started the server, completed the handshake and offered the tools to a local stand-in model (1.57.0, Windows); the desktop app was not run |
-| Zed | `context_servers` in Zed's settings file | no | documented |
 | Cline, Roo Code, Amazon Q | see `config --client <name>` | no | documented |
 
 "Documented" means the shape follows the client's own documentation and has not been run here. If one of them does not work for you, please open an issue with the client's name and version.
+
+#### Not supported yet
+
+These four are outside the supported set for now. The generator still prints a block for each, copied from the client's own documentation, but none has been run, so treat the block as a starting point and expect to adjust it. They stay here until someone can run the real client; nothing above promises more.
+
+| Client | Where it goes (from its documentation) | Status |
+| --- | --- | --- |
+| Kiro | `~/.kiro/settings/mcp.json` or `.kiro/settings/mcp.json` (`install --client kiro` can write it) | not tested, not supported yet |
+| Warp | Settings, Agents, MCP servers, + Add, then paste the JSON | not tested, not supported yet |
+| JetBrains IDEs (AI Assistant) | Settings, Tools, AI Assistant, Model Context Protocol (MCP), Add. The JetBrains page shows `command` and `args`; `env` is the common MCP key | not tested, not supported yet (only the Junie CLI above was run) |
+| Zed | `context_servers` in Zed's settings file | not tested, not supported yet |
 
 ### `install`: let handoff-desk edit the file
 
@@ -160,7 +167,7 @@ Each client has its own shape; the generator knows them (VS Code `servers`, Zed 
 - It adds one entry and leaves the rest of the file as it was (other servers, other settings, the indentation and the line endings), makes a timestamped backup first (never over an earlier one), and writes through a temporary file.
 - It refuses what it cannot read exactly: comments or a trailing comma (so JSONC files), a link, a folder where the file should be. It stops if the file changes while it works.
 - A `handoff` entry that is already there and differs is left alone unless you pass `--force`; then the command and arguments are updated and everything else in the entry, including secrets already in its `env`, is kept.
-- It can edit Cursor, Gemini CLI, LM Studio, Kiro and Amp. For every other client it tells you to use `config`.
+- It can edit Cursor, Gemini CLI, LM Studio, Amp and Kiro (Kiro is not supported yet, see above). For every other client it tells you to use `config`.
 
 ### Check your setup
 
