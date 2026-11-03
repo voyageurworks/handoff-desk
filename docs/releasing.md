@@ -31,7 +31,7 @@ Good to know: the registry only accepts a version that is already on npm, a publ
 
 ## Each release
 
-1. Update `version` in `package.json` **and in both places in `server.json`** (a test fails if they differ), and the date in `CHANGELOG.md`, commit, and wait for CI to pass on `main`.
+1. Update `version` in `package.json`, **in both places in `server.json`** and in `.cursor-plugin/plugin.json` (a test fails if they differ), and the date in `CHANGELOG.md`, commit, and wait for CI to pass on `main`.
 2. Create a GitHub release whose tag is `v` plus the version (for example `v1.0.1`).
 3. Open the `Release` run in the Actions tab, check that it is the version you meant, and approve the `npm-publish` deployment.
 

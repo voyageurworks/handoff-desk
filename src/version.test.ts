@@ -42,6 +42,25 @@ describe("MCP Registry metadata", () => {
     expect(server.packages[0]).toMatchObject({ registryType: "npm", identifier: pkg.name, version: pkg.version });
   });
 
+  it("the Cursor plugin manifest follows Cursor's rules and agrees with package.json", async () => {
+    const pkg = await readJson("package.json");
+    const plugin = (await readJson(".cursor-plugin/plugin.json")) as Record<string, unknown> & { author: Record<string, string> };
+    // name: lowercase kebab-case, starts and ends alphanumeric; paths relative with no "..".
+    expect(plugin.name).toMatch(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/);
+    expect(plugin.name).toBe("handoff-desk");
+    expect(plugin.version).toBe(pkg.version);
+    expect(plugin.license).toBe(pkg.license);
+    expect(String(plugin.description).length).toBeGreaterThan(20);
+    // The public repository must not hold a personal address: the author is a name only.
+    expect(Object.keys(plugin.author)).toEqual(["name"]);
+    expect(String(plugin.logo)).toMatch(/^(?!\/)(?!.*\.\.)[\w./-]+\.(png|svg)$/);
+    expect((await readFile(path.join(root, String(plugin.logo)))).length).toBeGreaterThan(1000);
+    // mcp.json at the root is found by Cursor on its own, so the manifest does not name it.
+    expect(plugin).not.toHaveProperty("mcpServers");
+    const mcp = (await readJson("mcp.json")) as { mcpServers: Record<string, { command: string; args: string[] }> };
+    expect(mcp.mcpServers.handoff.args).toContain(String(pkg.name));
+  });
+
   it("glama.json lists only the organization owner login", async () => {
     const glama = (await readJson("glama.json")) as { maintainers: string[] };
     expect(glama.maintainers).toEqual(["voyageur-works-dev"]);
