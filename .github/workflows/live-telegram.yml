@@ -1,0 +1,50 @@
+name: Live Telegram test
+
+# Manual only. Each job waits for approval in the `live-telegram` environment, which holds the test bot's token
+# and chat id. Temporary: this file and the environment are removed after the run.
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: live (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    environment: live-telegram
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel]
+    env:
+      HANDOFF_TELEGRAM_BOT_TOKEN: ${{ secrets.HANDOFF_TELEGRAM_BOT_TOKEN }}
+      HANDOFF_TELEGRAM_CHAT_ID: ${{ secrets.HANDOFF_TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Doorbell test message (published package)
+        run: |
+          export HANDOFF_DIR="$RUNNER_TEMP/desk"; mkdir -p "$HANDOFF_DIR"
+          uname -sm; node -v
+          npx -y @voyageurworks/handoff-desk@1.2.1 doctor --ping
+      - name: Real handoff_send through the MCP server (published package)
+        run: |
+          export HANDOFF_DIR="$RUNNER_TEMP/desk2"; mkdir -p "$HANDOFF_DIR" "$RUNNER_TEMP/sdk"
+          cd "$RUNNER_TEMP/sdk"
+          echo '{"type":"module","private":true}' > package.json
+          npm i --ignore-scripts --no-audit --no-fund @modelcontextprotocol/sdk@1.32.1 >/dev/null
+          cat > send.mjs <<'EOF'
+          import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+          import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+          const t = new StdioClientTransport({ command: "npx", args: ["-y", "@voyageurworks/handoff-desk@1.2.1"], env: { ...process.env } });
+          const c = new Client({ name: "claude-code", version: "1.0.0" });
+          await c.connect(t);
+          const r = await c.callTool({ name: "handoff_send", arguments: { type: "question", title: `Telegram live test from ${process.platform} ${process.arch}`, request: "Reply with pong." } });
+          const j = JSON.parse(r.content[0].text);
+          console.log(JSON.stringify({ notified: j.notified, chat: j.chat, id: j.id }));
+          await c.close();
+          if (!Array.isArray(j.notified) || !j.notified.includes("telegram")) process.exit(1);
+          EOF
+          node send.mjs
