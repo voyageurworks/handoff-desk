@@ -96,6 +96,11 @@ export const CLIENTS: ClientSpec[] = [
     render: under("mcpServers"),
   },
   {
+    id: "junie-cli", name: "Junie CLI (JetBrains)", evidence: "verified", checked: "Junie CLI 1468.30 on Windows 11 (the official release zip, in a throwaway folder; its JVM ignores the home-folder variables, so JUNIE_HOME was set) with this mcpServers JSON in a folder passed with --mcp-location and a local stand-in model: the server started, initialize and tools/list completed, and the tools were offered to the model. The default folders and the JetBrains IDEs were not run.",
+    where: "~/.junie/mcp/mcp.json for every project, or .junie/mcp/mcp.json in one project (the file Junie in the JetBrains IDEs reads too). For a one-off run, put it in a folder and pass --mcp-location <folder>.",
+    render: under("mcpServers"),
+  },
+  {
     id: "jetbrains", name: "JetBrains AI Assistant", evidence: "documented",
     where: "Settings, Tools, AI Assistant, Model Context Protocol (MCP), Add, then paste this JSON as the configuration and pick the server level (global or this project). JetBrains' documentation shows command and args; env is the common MCP key and is included so the desk folder reaches the server, so check the server starts and use handoff-desk doctor if it does not.",
     render: under("mcpServers"),
@@ -110,7 +115,7 @@ export const CLIENTS: ClientSpec[] = [
     },
   },
   {
-    id: "goose", name: "Goose", evidence: "documented",
+    id: "goose", name: "Goose", evidence: "verified", checked: "Goose 1.57.0 on Windows 11 (the official release zip, in a throwaway folder with GOOSE_PATH_ROOT set) with this extension block in config.yaml and a local stand-in model: the server started, initialize and tools/list completed, and the tools were offered to the model as handoff__handoff_*. The desktop app was not run.",
     where: "Under the `extensions:` key in Goose's config.yaml (Windows %APPDATA%\\Block\\goose\\config\\config.yaml; macOS and Linux ~/.config/goose/config.yaml), or add the same values in the app: Extensions, Add custom extension, Command-line extension. Merge the handoff entry into the existing extensions key.",
     render: options => {
       const { command, args } = launch(options);

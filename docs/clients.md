@@ -80,6 +80,13 @@ args = ["/absolute/path/to/handoff-desk/dist/main.js"]
 HANDOFF_DIR = "/absolute/path/to/your/desk"
 ```
 
+Codex asks before it calls a tool that is not marked read-only, and `handoff_send` writes a note. In an interactive session you approve the call. In `codex exec` (approval policy `never`) the call is refused with "MCP tool call requires approval, but approval policy is never"; to let that one tool through without a prompt, add this to `config.toml` (tested with Codex 0.166.0, where a note was created and answered end to end):
+
+```toml
+[mcp_servers.handoff.tools.handoff_send]
+approval_mode = "approve"
+```
+
 Codex can also be the **agent** that answers your notes, not only the client: point it at the desk folder (or the private desk repository) and give it the rules in [cloud-agents.md](cloud-agents.md).
 
 ## Claude Desktop
@@ -124,9 +131,10 @@ Each client has its own shape; the generator knows them (VS Code `servers`, Zed 
 | Claude Desktop | `claude_desktop_config.json` (Settings, Developer, Edit Config) | no | documented |
 | Windsurf (Devin Desktop) | `~/.config/devin/mcp_config.json`, older `~/.codeium/windsurf/mcp_config.json` | no | documented |
 | Warp | Settings, Agents, MCP servers, + Add, then paste the JSON | no | documented |
+| Junie CLI (JetBrains) | `~/.junie/mcp/mcp.json` or `.junie/mcp/mcp.json`, or a folder passed with `--mcp-location` | no | verified: started the server, completed the handshake and offered the tools to a local stand-in model (1468.30, Windows; the JetBrains IDEs were not run, and its JVM ignores HOME and USERPROFILE, so set `JUNIE_HOME` when testing) |
 | JetBrains AI Assistant | Settings, Tools, AI Assistant, Model Context Protocol (MCP), Add | no | documented; JetBrains' page shows `command` and `args`, and `env` is the common MCP key |
 | Continue | `mcpServers:` in the `config.yaml` you pass to the CLI (`cn --config`), or `.continue/mcpServers/handoff.yaml` in the editor extension | no | verified with the Continue CLI: it started the server, completed the handshake and offered all 8 tools to a local stand-in model (1.5.47, Windows); the CLI did not read the folder file, and the editor extension was not run |
-| Goose | `extensions:` in `config.yaml`, or Extensions, Add custom extension | no | documented |
+| Goose | `extensions:` in `config.yaml`, or Extensions, Add custom extension | no | verified: started the server, completed the handshake and offered the tools to a local stand-in model (1.57.0, Windows); the desktop app was not run |
 | Zed | `context_servers` in Zed's settings file | no | documented |
 | Cline, Roo Code, Amazon Q | see `config --client <name>` | no | documented |
 

@@ -9,19 +9,19 @@ import { ensureBuilt } from "./testBuild.js";
 const root = path.resolve(import.meta.dirname, "..");
 const unix = { dir: "~/handoff", windows: false };
 const windows = { dir: "C:\\Users\\me\\handoff", windows: true };
-const jsonClients = ["claude-desktop", "cursor", "windsurf", "gemini-cli", "lm-studio", "cline", "roo-code", "amazon-q", "kiro", "warp", "jetbrains"];
+const jsonClients = ["claude-desktop", "cursor", "windsurf", "gemini-cli", "lm-studio", "cline", "roo-code", "amazon-q", "kiro", "warp", "jetbrains", "junie-cli"];
 
 describe("the client table", () => {
   it("lists exactly the clients documented in the research, each with a where and an honest label", () => {
-    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "amp", "claude-code", "claude-desktop", "cline", "codex", "continue", "cursor", "gemini-cli", "goose", "jetbrains", "kilo-code", "kiro", "lm-studio", "opencode", "roo-code", "vscode", "warp", "windsurf", "zed"]);
+    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "amp", "claude-code", "claude-desktop", "cline", "codex", "continue", "cursor", "gemini-cli", "goose", "jetbrains", "junie-cli", "kilo-code", "kiro", "lm-studio", "opencode", "roo-code", "vscode", "warp", "windsurf", "zed"]);
     for (const client of CLIENTS) {
       expect(client.where.length, client.id).toBeGreaterThan(5);
       expect(["verified", "read", "documented"], client.id).toContain(client.evidence);
       // Anything stronger than "documented" says what was run; nothing else carries a claim.
       expect(Boolean(client.checked), client.id).toBe(client.evidence !== "documented");
     }
-    // Only a client that was really run is called verified: the server connected (Claude Code, Codex, Continue CLI, Gemini CLI, OpenCode, Kilo CLI).
-    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id).sort()).toEqual(["claude-code", "codex", "continue", "gemini-cli", "kilo-code", "opencode"]);
+    // Only a client that was really run is called verified: the server connected (Claude Code, Codex, Continue CLI, Gemini CLI, Goose, Junie CLI, OpenCode, Kilo CLI).
+    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id).sort()).toEqual(["claude-code", "codex", "continue", "gemini-cli", "goose", "junie-cli", "kilo-code", "opencode"]);
     // Read back by the client's own command, which does not start servers.
     expect(CLIENTS.filter(client => client.evidence === "read").map(client => client.id).sort()).toEqual(["amp"]);
   });
@@ -151,7 +151,7 @@ describe("configCommand", () => {
   it("lists every client with its label", () => {
     const result = configCommand(["--list"], "linux");
     expect(result.code).toBe(0);
-    expect(result.out!.trim().split("\n")).toHaveLength(20);
+    expect(result.out!.trim().split("\n")).toHaveLength(CLIENTS.length);
     for (const client of CLIENTS) expect(result.out).toContain(client.id);
     expect(result.out).toMatch(/claude-code\s+.*verified/);
     expect(result.out).toMatch(/cursor\s+.*documented/);

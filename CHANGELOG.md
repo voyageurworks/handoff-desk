@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Codex 0.166.0 is now `verified` in `config --list`: `codex exec` started the server from our config, completed the handshake and offered all 8 tools to a local stand-in model (Windows 11). Only Amp stays at `read`.
+- Codex 0.166.0 is now `verified` in `config --list`: `codex exec` started the server from our config, completed the handshake and offered all 8 tools to a local stand-in model (Windows 11). Only Amp stays at `read`. Goose 1.57.0 is now `verified` too, and the Junie CLI 1468.30 is a new `junie-cli` entry (21 clients), both with the server started and the handshake completed from our config (Windows 11, throwaway folders, local stand-in models; the JetBrains IDEs and the Goose app were not run). Codex, scripted to call `handoff_send`, created a note that the stand-in agent answered and `handoff_read` returned; Codex needs that call approved (docs added).
 
 ## 1.2.0 (2026-11-03)
 

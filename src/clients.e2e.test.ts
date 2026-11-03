@@ -56,7 +56,10 @@ describe("every client config in docs/clients.md starts a working server", () =>
     const entry = await ensureBuilt();
     const root = await mkdtemp(path.join(tmpdir(), "handoff clients-"));
     const desk = path.join(root, "my desk");
-    const launches = [...blocks("json"), ...blocks("toml")].map(text => {
+    // A TOML block without a command is a setting for an existing server (the Codex tool approval), not a launch.
+    const tomlBlocks = blocks("toml");
+    expect(tomlBlocks.filter(text => !/^command = /m.test(text)).join("\n")).toContain('[mcp_servers.handoff.tools.handoff_send]\napproval_mode = "approve"');
+    const launches = [...blocks("json"), ...tomlBlocks.filter(text => /^command = /m.test(text))].map(text => {
       const real = withRealPaths(text, entry, desk);
       return text.includes("[mcp_servers") ? fromToml(real) : fromJson(real);
     });

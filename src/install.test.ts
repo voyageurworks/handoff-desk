@@ -209,7 +209,7 @@ describe("files it will not touch", () => {
 });
 
 describe("clients it does not edit", () => {
-  it.each(["claude-desktop", "windsurf", "vscode", "codex", "continue", "goose", "opencode", "kilo-code", "zed", "warp", "jetbrains", "cline", "roo-code", "amazon-q", "claude-code"])("%s: says what to do instead and creates nothing", async id => {
+  it.each(["claude-desktop", "windsurf", "vscode", "codex", "continue", "goose", "opencode", "kilo-code", "zed", "warp", "jetbrains", "junie-cli", "cline", "roo-code", "amazon-q", "claude-code"])("%s: says what to do instead and creates nothing", async id => {
     const h = await home();
     const result = await installClient(id, { ...base, home: h, write: true });
     expect(result.code).toBe(1);

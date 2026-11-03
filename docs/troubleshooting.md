@@ -17,6 +17,10 @@ The first start of `npx -y @voyageurworks/handoff-desk` downloads the package, a
 2. `handoff_send` returns `notified` and, for a channel that did not ring, a reason. 401, 403 and 404 mean the token, chat or webhook is wrong or gone. 429 and 5xx, a timeout or no network are tried again by themselves (on the next start and the next send, with growing waits, up to 5 times or 3 days), and the message then starts with "Re-sent".
 3. A Telegram bot cannot write first: send it a message (or add it to the group) once. A Slack webhook is tied to one channel.
 
+## Codex says "MCP tool call requires approval"
+
+Codex asks before calling a tool that is not read-only, and a non-interactive `codex exec` run has no one to ask. Approve the call in an interactive session, or pre-approve `handoff_send` in `~/.codex/config.toml` (see [clients.md](clients.md#codex)).
+
 ## `claude mcp add` says "missing required argument"
 
 You are probably in Windows PowerShell 5.1, which drops a bare `--`. Write it in quotes: `claude mcp add handoff -e HANDOFF_DIR="$HOME/handoff" '--' node C:/path/to/handoff-desk/dist/main.js`. On macOS and Linux shells the bare `--` is fine.

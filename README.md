@@ -245,7 +245,7 @@ Besides the email, handoff-desk can post a short message to Telegram and/or Slac
 
 ## Generate a client config
 
-`handoff-desk config --client <name>` prints the settings block for an MCP client, with the right key for that client (VS Code, Zed, Codex, OpenCode, Kilo Code, Amp, Continue and Goose differ from the rest) and `cmd /c` for `npx` on Windows. `handoff-desk config --list` shows the 20 clients and how sure we are of each: **verified** means that exact output was run against the real client and it started the server (Claude Code, Codex, Gemini CLI, OpenCode, the Kilo CLI and the Continue CLI, all on Windows 11), **read** means the client's own command read it back correctly without starting it (Amp), **documented** means it follows the client's own documentation but was not run here. The line after the config says exactly what was run.
+`handoff-desk config --client <name>` prints the settings block for an MCP client, with the right key for that client (VS Code, Zed, Codex, OpenCode, Kilo Code, Amp, Continue and Goose differ from the rest) and `cmd /c` for `npx` on Windows. `handoff-desk config --list` shows the 21 clients and how sure we are of each: **verified** means that exact output was run against the real client and it started the server (Claude Code, Codex, Gemini CLI, Goose, the Junie CLI, OpenCode, the Kilo CLI and the Continue CLI, all on Windows 11), **read** means the client's own command read it back correctly without starting it (Amp), **documented** means it follows the client's own documentation but was not run here. The line after the config says exactly what was run.
 
 ```sh
 npx -y @voyageurworks/handoff-desk config --client cursor --dir ~/handoff > mcp.json
