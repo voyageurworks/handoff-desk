@@ -2,6 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 import { CLIENTS, PACKAGE, configCommand, renderClientConfig } from "./clientConfig.js";
 import { ensureBuilt } from "./testBuild.js";
 
@@ -19,10 +20,17 @@ describe("the client table", () => {
       // Anything stronger than "documented" says what was run; nothing else carries a claim.
       expect(Boolean(client.checked), client.id).toBe(client.evidence !== "documented");
     }
-    // Only a client that was really run is called verified: the server connected (Claude Code, Gemini CLI, OpenCode, Kilo CLI).
-    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id).sort()).toEqual(["claude-code", "gemini-cli", "kilo-code", "opencode"]);
+    // Only a client that was really run is called verified: the server connected (Claude Code, Continue CLI, Gemini CLI, OpenCode, Kilo CLI).
+    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id).sort()).toEqual(["claude-code", "continue", "gemini-cli", "kilo-code", "opencode"]);
     // Read back by the client's own command, which does not start servers.
-    expect(CLIENTS.filter(client => client.evidence === "read").map(client => client.id)).toEqual(["codex"]);
+    expect(CLIENTS.filter(client => client.evidence === "read").map(client => client.id).sort()).toEqual(["amp", "codex"]);
+  });
+  it("no client text holds a control character (a lost backslash turns \\b or \\c into one), and Goose's Windows path is intact", () => {
+    for (const client of CLIENTS) {
+      expect(client.where, client.id).not.toMatch(/[\u0000-\u0008\u000b-\u001f]/);
+      expect(client.checked ?? "", client.id).not.toMatch(/[\u0000-\u0008\u000b-\u001f]/);
+    }
+    expect(CLIENTS.find(client => client.id === "goose")!.where).toContain("%APPDATA%\\Block\\goose\\config\\config.yaml");
   });
 });
 
@@ -78,6 +86,22 @@ describe("renderClientConfig", () => {
     expect(yaml).toContain("    envs:\n      HANDOFF_DIR: " + JSON.stringify("~/handoff") + "\n");
     expect(yaml).toContain("    timeout: 300");
     expect(renderClientConfig("goose", windows)!).toContain("    cmd: " + JSON.stringify("cmd"));
+  });
+  it("Continue and Goose output parses as YAML and gives back exactly the values we meant, even for awkward folders", () => {
+    const folders = [
+      { dir: "~/handoff", windows: false },
+      { dir: "C:\\Users\\me\\hand off\\\"q\"", windows: true },
+      { dir: "/home/jörg/it's: here #1", windows: false },
+    ];
+    for (const options of folders) {
+      const command = options.windows ? "cmd" : "npx";
+      const args = options.windows ? ["/c", "npx", "-y", PACKAGE] : ["-y", PACKAGE];
+      const doc = parse(renderClientConfig("continue", options)!);
+      expect(doc).toMatchObject({ name: "Handoff Desk", schema: "v1" });
+      expect(doc.mcpServers).toEqual([{ name: "handoff", command, args, env: { HANDOFF_DIR: options.dir } }]);
+      const goose = parse(renderClientConfig("goose", options)!);
+      expect(goose.extensions.handoff).toEqual({ type: "stdio", name: "handoff", enabled: true, cmd: command, args, env_keys: [], envs: { HANDOFF_DIR: options.dir }, timeout: 300 });
+    }
   });
   it("the YAML blocks use no tabs and no trailing spaces, and end with a newline", () => {
     for (const id of ["continue", "goose"]) {

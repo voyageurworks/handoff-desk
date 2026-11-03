@@ -119,13 +119,13 @@ Each client has its own shape; the generator knows them (VS Code `servers`, Zed 
 | Codex | `~/.codex/config.toml` | no | read back by `codex mcp get` (0.166.0, Windows); that command does not start the server |
 | Cursor | `~/.cursor/mcp.json` | yes | documented |
 | Kiro | `~/.kiro/settings/mcp.json` or `.kiro/settings/mcp.json` | yes | documented |
-| Amp | `~/.config/amp/settings.json` (a workspace `.amp/settings.json` needs your approval in Amp) | yes | documented |
+| Amp | `~/.config/amp/settings.json` (a workspace `.amp/settings.json` needs your approval in Amp) | yes | read back by `amp mcp list` (0.0.1793664053, Windows); that command does not start the server, and `amp mcp doctor` needs a login |
 | LM Studio | `~/.lmstudio/mcp.json` | yes | documented |
 | Claude Desktop | `claude_desktop_config.json` (Settings, Developer, Edit Config) | no | documented |
 | Windsurf (Devin Desktop) | `~/.config/devin/mcp_config.json`, older `~/.codeium/windsurf/mcp_config.json` | no | documented |
 | Warp | Settings, Agents, MCP servers, + Add, then paste the JSON | no | documented |
 | JetBrains AI Assistant | Settings, Tools, AI Assistant, Model Context Protocol (MCP), Add | no | documented; JetBrains' page shows `command` and `args`, and `env` is the common MCP key |
-| Continue | `.continue/mcpServers/handoff.yaml` | no | documented |
+| Continue | `mcpServers:` in the `config.yaml` you pass to the CLI (`cn --config`), or `.continue/mcpServers/handoff.yaml` in the editor extension | no | verified with the Continue CLI: it started the server, completed the handshake and offered all 8 tools to a local stand-in model (1.5.47, Windows); the CLI did not read the folder file, and the editor extension was not run |
 | Goose | `extensions:` in `config.yaml`, or Extensions, Add custom extension | no | documented |
 | Zed | `context_servers` in Zed's settings file | no | documented |
 | Cline, Roo Code, Amazon Q | see `config --client <name>` | no | documented |

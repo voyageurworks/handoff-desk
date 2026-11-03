@@ -84,7 +84,8 @@ export const CLIENTS: ClientSpec[] = [
     install: { file: [".kiro", "settings", "mcp.json"], key: "mcpServers" },
   },
   {
-    id: "amp", name: "Amp", evidence: "documented",
+    id: "amp", name: "Amp", evidence: "read",
+    checked: "Amp CLI 0.0.1793664053 on Windows 11 (npm package @ampcode/cli): `amp mcp list` read the amp.mcpServers entry from ~/.config/amp/settings.json and listed it; that command does not start servers, and `amp mcp doctor` needs a login, so the handshake was not run.",
     where: "~/.config/amp/settings.json for every project (no approval needed), or .amp/settings.json in one project (Amp asks you to approve a workspace server the first time). Merge the amp.mcpServers key into the file if it already has one.",
     render: options => json({ "amp.mcpServers": { handoff: entry(options) } }),
     install: { file: [".config", "amp", "settings.json"], key: "amp.mcpServers" },
@@ -100,8 +101,9 @@ export const CLIENTS: ClientSpec[] = [
     render: under("mcpServers"),
   },
   {
-    id: "continue", name: "Continue", evidence: "documented",
-    where: "A new file .continue/mcpServers/handoff.yaml in your workspace (or the same folder under your home folder). Continue reads every YAML file in that folder; no other file needs to change.",
+    id: "continue", name: "Continue", evidence: "verified",
+    checked: "Continue CLI 1.5.47 on Windows 11, with the mcpServers block below inside a local config.yaml and a local stand-in model: the server started, initialize and tools/list completed, and all 8 handoff_ tools were offered to the model. The CLI did not load the .continue/mcpServers folder file, and the editor extension was not run.",
+    where: "In the editor extension: a new file .continue/mcpServers/handoff.yaml in your workspace (or the same folder under your home folder); Continue reads every YAML file in that folder. In the Continue CLI (cn): paste the mcpServers list below into the config.yaml you pass with --config (the CLI did not read the folder file when tested).",
     render: options => {
       const { command, args } = launch(options);
       return ["name: Handoff Desk", "version: 0.0.1", "schema: v1", "mcpServers:", "  - name: handoff", `    command: ${yamlString(command)}`, `    args: ${yamlList(args)}`, "    env:", `      HANDOFF_DIR: ${yamlString(options.dir)}`, ""].join("\n");
@@ -109,7 +111,7 @@ export const CLIENTS: ClientSpec[] = [
   },
   {
     id: "goose", name: "Goose", evidence: "documented",
-    where: "Under the `extensions:` key in Goose's config.yaml (Windows %APPDATA%\Block\goose\config\config.yaml; macOS and Linux ~/.config/goose/config.yaml), or add the same values in the app: Extensions, Add custom extension, Command-line extension. Merge the handoff entry into the existing extensions key.",
+    where: "Under the `extensions:` key in Goose's config.yaml (Windows %APPDATA%\\Block\\goose\\config\\config.yaml; macOS and Linux ~/.config/goose/config.yaml), or add the same values in the app: Extensions, Add custom extension, Command-line extension. Merge the handoff entry into the existing extensions key.",
     render: options => {
       const { command, args } = launch(options);
       return ["extensions:", "  handoff:", "    type: stdio", "    name: handoff", "    enabled: true", `    cmd: ${yamlString(command)}`, `    args: ${yamlList(args)}`, "    env_keys: []", "    envs:", `      HANDOFF_DIR: ${yamlString(options.dir)}`, "    timeout: 300", ""].join("\n");
