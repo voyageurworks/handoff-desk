@@ -57,7 +57,7 @@ export const CLIENTS: ClientSpec[] = [
   { id: "windsurf", name: "Windsurf (Devin Desktop)", evidence: "documented", where: "~/.config/devin/mcp_config.json (Windows %APPDATA%\\devin\\mcp_config.json); older versions: ~/.codeium/windsurf/mcp_config.json.", render: under("mcpServers") },
   { id: "gemini-cli", name: "Gemini CLI", evidence: "verified", checked: "Gemini CLI 0.66.0 on Windows 11: `gemini mcp list` showed the server connected. A wrapper log shows Gemini started it and completed the initialize handshake (this command does not list tools). Folder trust was turned off in a throwaway home, because Gemini otherwise reports the server Disabled; macOS and Linux not run.", where: "~/.gemini/settings.json for all projects, or .gemini/settings.json in one project.", render: under("mcpServers"), install: { file: [".gemini", "settings.json"], key: "mcpServers" } },
   {
-    id: "codex", name: "Codex (CLI and IDE)", evidence: "read", checked: "Codex 0.166.0 on Windows 11: `codex mcp get handoff` read the file back correctly (stdio, the command, the arguments, the env); that command does not start the server.",
+    id: "codex", name: "Codex (CLI and IDE)", evidence: "verified", checked: "Codex 0.166.0 on Windows 11, in a throwaway home with a local stand-in model: `codex exec` started the server from a config.toml in this shape, initialize and tools/list completed, and all 8 handoff_ tools were offered to the model (`codex mcp get` also reads the file back correctly). Codex answering notes as the agent was not run.",
     where: "~/.codex/config.toml (or .codex/config.toml in a trusted project), or `codex mcp add handoff -- <command>`.",
     render: options => {
       const { command, args } = launch(options);

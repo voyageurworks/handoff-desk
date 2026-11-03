@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Codex 0.166.0 is now `verified` in `config --list`: `codex exec` started the server from our config, completed the handshake and offered all 8 tools to a local stand-in model (Windows 11). Only Amp stays at `read`.
+
 ## 1.2.0 (2026-11-03)
 
 - **Seven more clients in `config`**, 20 in all: Continue, Goose, JetBrains AI Assistant, Kilo Code, Kiro, Amp and Warp, each from the client's own documentation (Continue and Goose print YAML, Amp uses the dotted `amp.mcpServers` key, Kilo Code the OpenCode-style `mcp` shape).

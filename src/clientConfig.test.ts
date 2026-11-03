@@ -20,10 +20,10 @@ describe("the client table", () => {
       // Anything stronger than "documented" says what was run; nothing else carries a claim.
       expect(Boolean(client.checked), client.id).toBe(client.evidence !== "documented");
     }
-    // Only a client that was really run is called verified: the server connected (Claude Code, Continue CLI, Gemini CLI, OpenCode, Kilo CLI).
-    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id).sort()).toEqual(["claude-code", "continue", "gemini-cli", "kilo-code", "opencode"]);
+    // Only a client that was really run is called verified: the server connected (Claude Code, Codex, Continue CLI, Gemini CLI, OpenCode, Kilo CLI).
+    expect(CLIENTS.filter(client => client.evidence === "verified").map(client => client.id).sort()).toEqual(["claude-code", "codex", "continue", "gemini-cli", "kilo-code", "opencode"]);
     // Read back by the client's own command, which does not start servers.
-    expect(CLIENTS.filter(client => client.evidence === "read").map(client => client.id).sort()).toEqual(["amp", "codex"]);
+    expect(CLIENTS.filter(client => client.evidence === "read").map(client => client.id).sort()).toEqual(["amp"]);
   });
   it("no client text holds a control character (a lost backslash turns \\b or \\c into one), and Goose's Windows path is intact", () => {
     for (const client of CLIENTS) {
@@ -155,7 +155,8 @@ describe("configCommand", () => {
     for (const client of CLIENTS) expect(result.out).toContain(client.id);
     expect(result.out).toMatch(/claude-code\s+.*verified/);
     expect(result.out).toMatch(/cursor\s+.*documented/);
-    expect(result.out).toMatch(/codex\s+.*\[read\]/);
+    expect(result.out).toMatch(/amp\s+.*\[read\]/);
+    expect(result.out).toMatch(/codex\s+.*\[verified\]/);
     expect(result.out).toMatch(/gemini-cli\s+.*\[verified\]/);
   });
   it("prints only the config on stdout and says where it goes on stderr", () => {

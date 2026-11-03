@@ -116,7 +116,7 @@ Each client has its own shape; the generator knows them (VS Code `servers`, Zed 
 | Gemini CLI | `~/.gemini/settings.json` | yes | verified: started and handshake completed (Gemini CLI 0.66.0, Windows; needs folder trust, else Gemini shows it Disabled) |
 | OpenCode | `opencode.json` (project) or the global OpenCode config | no | verified: `opencode mcp list` showed it connected (1.19.5, Windows) |
 | Kilo Code | `~/.config/kilo/kilo.jsonc` or `kilo.jsonc` / `.kilo/kilo.jsonc` in a project | no | verified with the Kilo CLI: `kilo mcp list` showed it connected (7.8.18, Windows); the editor extension was not run |
-| Codex | `~/.codex/config.toml` | no | read back by `codex mcp get` (0.166.0, Windows); that command does not start the server |
+| Codex | `~/.codex/config.toml` | no | verified: `codex exec` started the server, completed the handshake and offered all 8 tools to a local stand-in model (0.166.0, Windows); Codex answering notes as the agent was not run |
 | Cursor | `~/.cursor/mcp.json` | yes | documented |
 | Kiro | `~/.kiro/settings/mcp.json` or `.kiro/settings/mcp.json` | yes | documented |
 | Amp | `~/.config/amp/settings.json` (a workspace `.amp/settings.json` needs your approval in Amp) | yes | read back by `amp mcp list` (0.0.1793664053, Windows); that command does not start the server, and `amp mcp doctor` needs a login |
