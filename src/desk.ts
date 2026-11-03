@@ -10,7 +10,7 @@ import { commitAndPush, git, pullRebase, PushFailedError, pushPending, type Sync
  * each synced operation, e.g. to clone the desk repo on first use in a cloud session.
  */
 export type DeskConfig = { deskDir: string; rootDir?: string; now?: () => Date; sync?: SyncHandle; prepare?: () => Promise<void> };
-export type SendInput = { type: NoteType; title: string; request: string; replyBy?: string };
+export type SendInput = { type: NoteType; title: string; request: string; replyBy?: string; from?: string };
 export const REQUEST_LIMIT = 4000;
 
 export type Desk = ReturnType<typeof createDesk>;
@@ -133,7 +133,7 @@ export function createDesk(config: DeskConfig) {
     const created = localIso(now());
     const file = noteFileName(created, id, input.title);
     const full = path.join(config.deskDir, file);
-    await writeFile(full, renderNote({ id, type: input.type, created, title: input.title, request: input.request, replyBy: input.replyBy }), { encoding: "utf8", flag: "wx" });
+    await writeFile(full, renderNote({ id, type: input.type, created, title: input.title, request: input.request, replyBy: input.replyBy, from: input.from }), { encoding: "utf8", flag: "wx" });
     if (sync) {
       try {
         await commitAndPush(sync.root, [full], `Handoff: ${input.type} ${id} - ${safeTitle(input.title)}`, sync.identity);

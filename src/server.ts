@@ -11,7 +11,7 @@ import { ringDoorbell, ringMessage, type RingItem } from "./doorbell.js";
 import { ringChat, type ChatResult } from "./notify.js";
 import { enqueue, flushOutbox, type Channel } from "./outbox.js";
 import { assertNoteFileName, listInbox, replyToInbox } from "./inbox.js";
-import { localIso } from "./note.js";
+import { localIso, senderFrom } from "./note.js";
 import type { SyncHandle } from "./sync.js";
 
 /** The package's own version, so MCP clients see what is actually installed (src/ and dist/ both sit one level below package.json). */
@@ -110,6 +110,9 @@ export function buildServer(config: HandoffConfig, syncSource: SyncSource = null
     return { id: written.id, path: written.path, ring, notified, ...(Object.keys(chat).length ? { chat: visible(chat) } : {}), ...(resent.length ? { resent } : {}), ...(emailCopy ? { emailCopy } : {}), ...(emailCopyError ? { emailCopyError } : {}) };
   }
 
+  /** Who is connected, from the client's own name in the MCP handshake (information for the agent, not proof). */
+  const sender = () => senderFrom(server.server.getClientVersion()?.name);
+
   addTool(server, "handoff_send", SEND_DESCRIPTION,
     {
       type: z.enum(["errand", "question", "status"]),
@@ -117,11 +120,11 @@ export function buildServer(config: HandoffConfig, syncSource: SyncSource = null
       request: z.string().min(1).max(4000).describe("What is needed and why, plus any deadline"),
       replyBy: z.string().max(60).optional(),
     },
-    args => deliver(args));
+    args => deliver({ ...args, from: sender() }));
 
   addTool(server, "handoff_status", "Post a one-line status for the agent to pass on to the user, e.g. 'Finished phase 1' or 'Blocked on X, need your call'.",
     { title: z.string().min(1).max(120), line: z.string().min(1).max(500) },
-    args => deliver({ type: "status", title: args.title, request: args.line }));
+    args => deliver({ type: "status", title: args.title, request: args.line, from: sender() }));
 
   addTool(server, "handoff_list", "List desk items (id, type, title, status, created), optionally only those waiting, done or declined. If the shared repository can't be reached, answers from this computer's copy as { stale, items }.",
     { status: z.enum(["waiting", "done", "declined", "info"]).optional() },

@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.voyageurworks/handoff-desk",
   "title": "handoff-desk",
-  "description": "Hand tasks from Claude Code or Cursor to a personal agent through a folder of markdown notes.",
+  "description": "Hand tasks from Claude Code, Cursor or Codex to a personal agent through a folder of markdown notes.",
   "repository": {
     "url": "https://github.com/voyageurworks/handoff-desk",
     "source": "github"
   },
-  "version": "1.2.0",
+  "version": "1.2.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@voyageurworks/handoff-desk",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "transport": {
         "type": "stdio"
       },

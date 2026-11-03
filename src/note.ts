@@ -42,9 +42,21 @@ export function localIso(date: Date, tz: string = process.env.HANDOFF_TZ ?? Intl
 /** Request text stays text: a heading or rule line in it ("## Reply", "---") can't open a section of the note. */
 const asPlainLines = (text: string) => text.split("\n").map(line => line.replace(/^(\s{0,3})(#{1,6}(?:\s|$)|---\s*$)/, "$1\\$2")).join("\n");
 
-export function renderNote(item: { id: number; type: NoteType; created: string; title: string; request: string; replyBy?: string }): string {
+/**
+ * The `from:` value of a note: the MCP client's own name (claude-code, cursor, codex, or whatever else connected), cut down to a few
+ * safe characters because it is written into the note's front matter. Unknown or empty names keep the old default, claude-code.
+ */
+export function senderFrom(clientName?: string): string {
+  const name = (clientName ?? "").toLowerCase();
+  if (name.includes("codex")) return "codex";
+  if (name.includes("cursor")) return "cursor";
+  if (name.includes("claude") && !name.includes("desktop")) return "claude-code";
+  return name.replace(/[^a-z0-9._-]+/g, "-").replace(/^[-._]+|[-._]+$/g, "").slice(0, 40) || "claude-code";
+}
+
+export function renderNote(item: { id: number; type: NoteType; created: string; title: string; request: string; replyBy?: string; from?: string }): string {
   return [
-    "---", `id: ${item.id}`, `type: ${item.type}`, "from: claude-code", "status: waiting", `created: ${item.created}`, "answered:", "tags: [handoff]", "---",
+    "---", `id: ${item.id}`, `type: ${item.type}`, `from: ${senderFrom(item.from)}`, "status: waiting", `created: ${item.created}`, "answered:", "tags: [handoff]", "---",
     "", `# ${oneLine(item.title)}`, "", "## Request", "", asPlainLines(item.request.trim()),
     ...(item.replyBy ? ["", `Reply by: ${oneLine(item.replyBy)}`] : []),
     "", "## Reply", "",

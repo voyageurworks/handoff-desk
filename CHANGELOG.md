@@ -1,8 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.2.1 (2026-11-03)
 
 - Codex 0.166.0 is now `verified` in `config --list`: `codex exec` started the server from our config, completed the handshake and offered all 8 tools to a local stand-in model (Windows 11). Only Amp stays at `read`. Goose 1.57.0 is now `verified` too, and the Junie CLI 1468.30 is a new `junie-cli` entry (21 clients), both with the server started and the handshake completed from our config (Windows 11, throwaway folders, local stand-in models; the JetBrains IDEs and the Goose app were not run). Codex, scripted to call `handoff_send`, created a note that the stand-in agent answered and `handoff_read` returned; Codex needs that call approved (docs added).
+- **Notes say which client sent them**: `from:` was always `claude-code`; it now comes from the MCP client's own name (`claude-code`, `cursor`, `codex`, or the client's own name), reduced to safe characters so it cannot add lines to a note's front matter. Checked with the real Codex 0.166.0 (`from: codex`). The agent contract says `from` is information, not proof of who sent a note.
+- **Claude Code, Cursor and Codex are named everywhere**: the package, registry and Cursor plugin descriptions, and a README section that says what has been run for each (Claude Code and Codex: the real client; Cursor: config and install tested, the Cursor app itself not run).
+- **Codex needs the send call approved**: documented in `docs/clients.md` and `docs/troubleshooting.md` (an interactive session asks; `codex exec` refuses unless `[mcp_servers.handoff.tools.handoff_send]` has `approval_mode = "approve"`).
+- **Cursor directory**: `.cursor-plugin/plugin.json` in the repository (name, description, logo, keywords) for cursor.directory; it is not part of the npm package, and a test keeps its version in step with `package.json`.
+- Tests: the YAML that `config` prints for Continue and Goose is parsed with a real YAML parser (dev dependency `yaml`), including awkward folder names; the client count is no longer hard-coded.
 
 ## 1.2.0 (2026-11-03)
 

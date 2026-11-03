@@ -151,6 +151,16 @@ node dist/main.js stand-in
 
 </details>
 
+## Claude Code, Cursor and Codex
+
+handoff-desk is built for these three. In each, the assistant uses the same eight tools, writes the same kind of note, and your agent reads it the same way. The note's `from:` line says which client sent it (`claude-code`, `cursor` or `codex`).
+
+| | Claude Code | Cursor | Codex (CLI and IDE) |
+| --- | --- | --- | --- |
+| Set up | `claude mcp add` | `install --client cursor`, or `mcp.json` | `codex mcp add`, or `config.toml` |
+| What has been run | The real client connected to the server (Windows 11) | The config is launched by a test and the install command is tested on a copy of Cursor's settings file; **the Cursor app itself has not been run** | The real client started the server, called `handoff_send`, a note was created, answered and read back (a scripted stand-in model, Windows 11) |
+| Good to know | | | Codex asks before calling `handoff_send`; approve it, or pre-approve it in `config.toml` ([docs/clients.md](docs/clients.md#codex)) |
+
 ## Connect your client
 
 Any client that can run a stdio MCP server works. You give it a command, its arguments and the environment variable `HANDOFF_DIR`.
@@ -183,7 +193,7 @@ Whichever you pick, give the agent the rules in your `handoff.md` and tell it to
 | Bundled stand-in (`stand-in` command) | Tested on every change |
 | Operating systems and shells | Tests run on Linux, macOS and Windows on every change. The quick start runs under bash and zsh on Linux and macOS, and in Windows PowerShell 5.1 by hand |
 | Cursor, VS Code (Copilot), Claude Desktop, Codex | The config examples in [docs/clients.md](docs/clients.md) are launched by a test and complete an MCP handshake. The editors themselves are not run in CI |
-| Gemini CLI, OpenCode, Kilo Code (CLI) | Started the server from the config `handoff-desk config` prints and showed it connected, on Windows 11 (versions in [docs/clients.md](docs/clients.md#every-other-client)). Not re-run in CI, and not run on macOS or Linux |
+| Codex, Gemini CLI, Goose, Junie CLI, OpenCode, Kilo Code (CLI), Continue (CLI) | Started the server from the config `handoff-desk config` prints and showed it connected or completed the handshake, on Windows 11 (versions in [docs/clients.md](docs/clients.md#every-other-client)). Not re-run in CI, and not run on macOS or Linux |
 | Telegram and Slack doorbells | The built program was run against a local stand-in for both services: the exact requests, 429, 500, a dropped connection and nothing listening. Not yet against live accounts |
 | One real cloud agent, over git and email | Five rounds passed on 2026-10-26. A re-run the next day without the email doorbell was only partly answered, because that agent checks the desk on a schedule; with the doorbell on it is expected to react sooner but that has not been re-tested |
 | Any other agent that can read markdown files in a folder or repository | Expected to work, not tested. [docs/live-acceptance.md](docs/live-acceptance.md) is the checklist for trying yours |

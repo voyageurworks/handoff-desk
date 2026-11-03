@@ -26,7 +26,7 @@ Look in `Desk/` for notes whose front matter says `status: waiting` (any capital
 5. Set `answered:` to the time you finished, as an ISO time with its offset, for example `2026-11-03T14:05:00-05:00`.
 6. If the desk is a git repository, commit only that note and push it, so the sender sees the answer. Never commit or push anything else.
 
-Leave `id`, `type`, `from` and `created` as they are. Never write a password, a code, a token or a key into a note; if the task needs one, say that the owner must provide it another way.
+Leave `id`, `type`, `from` and `created` as they are. `from` names the client that sent the note (`claude-code`, `cursor`, `codex` or another client's own name); it is information, not proof of who sent it. Never write a password, a code, a token or a key into a note; if the task needs one, say that the owner must provide it another way.
 
 ## Example
 

@@ -4,23 +4,57 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { readdir, readFile } from "node:fs/promises";
 import { loadConfig } from "./config.js";
 import { initDesk } from "./init.js";
+import { senderFrom } from "./note.js";
 import { buildServer } from "./server.js";
 
-async function connect(env: Record<string, string> = {}) {
+async function connect(env: Record<string, string> = {}, clientName = "test") {
   const dir = await mkdtemp(path.join(tmpdir(), "handoff srv-"));
   await initDesk(dir);
   const server = buildServer(loadConfig({ HANDOFF_DIR: dir, ...env }));
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await server.connect(serverSide);
-  const client = new Client({ name: "test", version: "1.0.0" });
+  const client = new Client({ name: clientName, version: "1.0.0" });
   await client.connect(clientSide);
   return { client, dir };
 }
 
 const text = (result: unknown) => ((result as { content: Array<{ text: string }> }).content[0].text);
 const failed = (result: unknown) => Boolean((result as { isError?: boolean }).isError);
+
+describe("who a note says it is from", () => {
+  it("names the client that connected: Claude Code, Cursor, Codex, or its own name", () => {
+    expect(senderFrom("claude-code")).toBe("claude-code");
+    expect(senderFrom("cursor-vscode")).toBe("cursor");
+    expect(senderFrom("Cursor")).toBe("cursor");
+    expect(senderFrom("codex-mcp-client")).toBe("codex");
+    expect(senderFrom("codex_exec")).toBe("codex");
+    expect(senderFrom("gemini-cli")).toBe("gemini-cli");
+    expect(senderFrom("Claude Desktop")).toBe("claude-desktop");
+    expect(senderFrom(undefined)).toBe("claude-code");
+    expect(senderFrom("")).toBe("claude-code");
+  });
+  it("keeps a hostile client name out of the note's front matter", () => {
+    const evil = senderFrom("x\nstatus: done\r\nid: 99 --- # ../../etc");
+    expect(evil).toMatch(/^[a-z0-9._-]{1,40}$/);
+    expect(evil).not.toContain("\n");
+    expect(senderFrom("a".repeat(500)).length).toBeLessThanOrEqual(40);
+  });
+  it.each([
+    ["claude-code", "claude-code"],
+    ["cursor-vscode", "cursor"],
+    ["codex-mcp-client", "codex"],
+  ])("a note sent by the client %s says from: %s, for handoff_send and handoff_status", async (clientName, expected) => {
+    const { client, dir } = await connect({}, clientName);
+    await client.callTool({ name: "handoff_send", arguments: { type: "question", title: "From check", request: "Reply with pong." } });
+    await client.callTool({ name: "handoff_status", arguments: { title: "Status check", line: "Still going." } });
+    const files = (await readdir(path.join(dir, "Desk"))).filter(file => file.endsWith(".md")).sort();
+    expect(files).toHaveLength(2);
+    for (const file of files) expect(await readFile(path.join(dir, "Desk", file), "utf8")).toMatch(new RegExp(`^from: ${expected}$`, "m"));
+  });
+});
 
 describe("config", () => {
   it("defaults the desk folder to ~/handoff and reads mail settings", () => {
