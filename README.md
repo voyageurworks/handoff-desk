@@ -246,6 +246,7 @@ Set these as environment variables in your MCP client's config.
 Besides the email, handoff-desk can post a short message to Telegram and/or Slack when a note is created, so the agent (or you) hears about it at once. Both are **off unless you set them**, send nothing but this one message, and never read anything back: the agent still answers in the note.
 
 - The message says `New handoff #3 (question): <title>`, the note's name under `Desk/`, and what to do. It does **not** contain the request unless `HANDOFF_NOTIFY_INCLUDE_REQUEST=1`, and it never contains your computer's folder names. Chat services are third parties.
+- **Step-by-step setup for both, including how to find the chat id and make the Slack webhook: [docs/chat-doorbells.md](docs/chat-doorbells.md).**
 - **Telegram:** create a bot with @BotFather, write to it once (or add it to a group), and set `HANDOFF_TELEGRAM_BOT_TOKEN` (or `HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND`) and `HANDOFF_TELEGRAM_CHAT_ID`. Plain text only.
 - **Slack:** create an incoming webhook for a channel and set `HANDOFF_SLACK_WEBHOOK_URL` (or `HANDOFF_SLACK_WEBHOOK_COMMAND`). Only `https://hooks.slack.com/services/...` addresses are accepted, and `<!channel>`-style mentions in a title are neutralised.
 - The bot token and the webhook URL are secrets: keep them in `HANDOFF_ENV_FILE`, or fetch them with a command, like the mail password ([docs/keeping-secrets.md](docs/keeping-secrets.md)). They are never printed, logged or returned.
