@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Docs only: `SECURITY.md` now covers the chat doorbells, the retry list, `install`, `doctor` and the `from:` line; a one-line-each table for Claude Code, Cursor and Codex at the top of `docs/clients.md`; the agent contract page explains the `from:` values. Checked on Node 24.20 with deprecation warnings turned into errors: the server, the CLI commands and all 354 tests run clean.
+
 ## 1.2.1 (2026-11-03)
 
 - Codex 0.166.0 is now `verified` in `config --list`: `codex exec` started the server from our config, completed the handshake and offered all 8 tools to a local stand-in model (Windows 11). Only Amp stays at `read`. Goose 1.57.0 is now `verified` too, and the Junie CLI 1468.30 is a new `junie-cli` entry (21 clients), both with the server started and the handshake completed from our config (Windows 11, throwaway folders, local stand-in models; the JetBrains IDEs and the Goose app were not run). Codex, scripted to call `handoff_send`, created a note that the stand-in agent answered and `handoff_read` returned; Codex needs that call approved (docs added).

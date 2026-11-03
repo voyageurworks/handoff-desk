@@ -14,6 +14,18 @@ Build first (`npm install && npm run build`, or the pnpm equivalent) and create 
 
 Keep secrets such as the mail app password out of these files: use `HANDOFF_ENV_FILE` or `HANDOFF_MAIL_PASSWORD_COMMAND` ([keeping-secrets.md](keeping-secrets.md)).
 
+## Claude Code, Cursor and Codex in one line each
+
+No clone needed: these use the published package. On Windows put `cmd /c` in front of `npx` (the sections below show the exact form). Restart or reload the client afterwards.
+
+| Client | Command |
+| --- | --- |
+| Claude Code | `claude mcp add handoff -e HANDOFF_DIR="$HOME/handoff" -- npx -y @voyageurworks/handoff-desk` |
+| Cursor | `npx -y @voyageurworks/handoff-desk install --client cursor --write` (leave out `--write` to see what it would add) |
+| Codex | `codex mcp add handoff --env HANDOFF_DIR="$HOME/handoff" -- npx -y @voyageurworks/handoff-desk`, then approve `handoff_send` when Codex asks, or pre-approve it ([Codex](#codex)) |
+
+All three then do the same thing. Ask the assistant: "Hand this to my agent as a question: reply with pong." A note appears in the desk's `Desk/` folder with `from: claude-code`, `from: cursor` or `from: codex`; your agent answers it, and the assistant reads the reply with `handoff_read` or `handoff_wait`. [Check that it works](#check-that-it-works) shows the whole round trip with the bundled stand-in agent.
+
 ## Claude Code
 
 ```sh

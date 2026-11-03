@@ -12,7 +12,12 @@ It never sends passwords, codes or keys on your behalf: `handoff_send` refuses a
 - Git remotes: only `file`, `https` and `ssh` transports are allowed (never `ext::`, which runs a command), and tokens in a remote URL are removed from error messages.
 - Prompt injection: tool descriptions tell the model that text from the agent is untrusted.
 - Mail: port 465 uses TLS, other ports must upgrade with STARTTLS, and the send has a time limit.
-- Supply chain: CI runs with read-only permissions and pinned actions, a weekly dependency audit and secret scan, Dependabot, and CodeQL once the repository is public.
+- Telegram and Slack doorbells: the bot token and the Slack webhook are secrets that come from the environment or from your own command, and are never printed, logged or returned to the assistant. Slack accepts only an `https://hooks.slack.com/services/...` webhook (parsed, not prefix-matched: no credentials, no port) and Telegram talks only to `api.telegram.org`; neither follows redirects. The test endpoint `HANDOFF_CHAT_TEST_ENDPOINT` accepts only plain `http` to a loopback address and is for tests.
+- Retry list for failed chat messages: it keeps only a pointer (note number, channels, attempt count, next try), never the message or a secret, in a folder outside the desk and its git history. Only failures that can pass (network, timeout, 429, 5xx) are retried, at most five times or three days.
+- `install --client`: a dry run unless you add `--write`. It edits only the strict JSON settings file of a client under your home folder, makes a backup first, writes atomically, and refuses a symbolic link, a folder, a file with comments or one that changed meanwhile.
+- `doctor`: never prints a secret and never runs a `*_COMMAND` setting; `--ping` sends one labelled test message to Telegram and Slack only, never email.
+- Notes name their sender in the `from:` line (`claude-code`, `cursor`, `codex`, or the client's own name) taken from the MCP handshake and reduced to a few safe characters so it cannot add lines to a note. It is information, not proof of who sent the note.
+- Supply chain: CI runs with read-only permissions and every action pinned to a commit, a dependency audit and a full-history secret scan, Dependabot, and CodeQL. Each npm release is built by GitHub Actions with provenance, and both the npm publish and the MCP Registry publish wait for a named person to approve them after the tarball is checked.
 
 ## Reporting a problem
 
