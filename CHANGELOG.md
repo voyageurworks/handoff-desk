@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- CI only: the macOS jobs run on the Intel runner (`macos-15-intel`) because GitHub's Apple-silicon runners were not available (jobs were cancelled with "not acquired by Runner"). Apple-silicon macOS is not in CI.
 - Docs only: `docs/chat-doorbells.md`, a step-by-step setup for the Telegram and Slack doorbells (private secrets file, finding the chat id, creating the Slack webhook, checking it, what each refusal means).
 - Docs only: the chat doorbells are now tested live as well (Telegram and Slack on Windows 11 and Linux, Telegram on macOS 15 Intel); the README lists what was not tested live.
 - Docs only: Kiro, Warp, the JetBrains IDEs and Zed are listed as "not supported yet" (not tested) in `README.md` and `docs/clients.md`, and are out of the main client lists. Their `config` and `install` output is unchanged.
