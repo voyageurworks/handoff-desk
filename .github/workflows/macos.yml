@@ -1,0 +1,131 @@
+name: macOS
+
+# The same checks as CI, on macOS, including the README quick start under bash and zsh (the real user scenario): Intel
+# (macos-15-intel) and Apple silicon (macos-15, arm64) on Node 22 and 24, and the newest macOS (macos-26, arm64) on Node 24.
+# "macOS passed" means handoff-desk works on a real Mac.
+#
+# Not part of the push CI. GitHub's macOS pools are sometimes short of runners, and a job that never starts marked every
+# push to main as failed. This workflow runs on pull requests, weekly and on demand, never on pushes to main.
+#
+# The ONE required check is "macOS result" (the last job), which runs on an ordinary Linux runner so it always starts:
+#   - a macOS job that ran and FAILED  -> "macOS result" fails and the merge is blocked;
+#   - no macOS job ran (no runner)     -> it passes with a loud warning and a job summary saying macOS was NOT verified,
+#                                         so a runner shortage never forces an administrator override;
+#   - some passed, some did not run    -> it passes and lists what did not run.
+# Logic and tests: scripts/macos-gate.mjs, src/macosGate.test.ts. If you rename "macOS result", update the required checks
+# of main too, or pull requests will wait for a check that never appears.
+#
+# Before a release, run this workflow by hand on the release commit (Actions tab, "Run workflow") and write the result, or
+# the gap, in the release notes. A job cancelled with "not acquired by Runner of type hosted" is a runner shortage, not a code
+# failure: re-run it by hand later, never in a loop. `macos-latest` is avoided on purpose: it is macos-26-arm64, the label
+# cancelled most. Availability changes by label and by minute; see the tracking issue.
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 5 * * 1"
+
+# A stale run must never sit in the macOS queue and keep the newest one waiting.
+concurrency:
+  group: macos-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: macOS ${{ matrix.arch }} (Node ${{ matrix.node }})
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-15-intel, arch: x64, node: 22 }
+          - { os: macos-15-intel, arch: x64, node: 24 }
+          - { os: macos-15, arch: arm64, node: 22 }
+          - { os: macos-15, arch: arm64, node: 24 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Which machine this is
+        run: uname -m && sw_vers
+      - run: npm install --global pnpm@10
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm test
+
+  shells:
+    # The README quick start under the shells people actually use (macOS ships zsh).
+    name: macOS shells (${{ matrix.arch }}, ${{ matrix.shell }})
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-15-intel, arch: x64, shell: bash }
+          - { os: macos-15-intel, arch: x64, shell: zsh }
+          - { os: macos-15, arch: arm64, shell: bash }
+          - { os: macos-15, arch: arm64, shell: zsh }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Which machine this is
+        run: uname -m && sw_vers
+      - run: npm install
+      - run: npm run build
+      - name: Quick start under ${{ matrix.shell }}
+        run: ${{ matrix.shell }} scripts/quickstart-smoke.sh
+
+  # The newest macOS, Apple silicon: tests and the zsh quick start in one job. Its pool can queue for minutes, so it never
+  # fails the workflow run by itself (continue-on-error); "macOS result" still counts a real failure.
+  latest:
+    name: macOS latest (macos-26, arm64, Node 24)
+    continue-on-error: true
+    timeout-minutes: 30
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Which machine this is
+        run: uname -m && sw_vers
+      - run: npm install --global pnpm@10
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm test
+      - run: npm run build
+      - name: Quick start under zsh
+        run: zsh scripts/quickstart-smoke.sh
+
+  # The required check. Runs on Linux, so it always starts, and decides from what the macOS jobs above really did.
+  result:
+    name: macOS result
+    needs: [check, shells, latest]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: What the macOS jobs did
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs" \
+            --paginate --jq '.jobs[] | {name: .name, conclusion: .conclusion}' > jobs.ndjson
+          node scripts/macos-gate.mjs jobs.ndjson
