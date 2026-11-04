@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- CI only: a small `CI retry` workflow re-runs, once, the macOS jobs that GitHub cancelled before they got a runner. A job that started and failed is never re-run.
 - CI only: macOS jobs run on both Apple silicon (`macos-latest`, macOS 26) and Intel (`macos-15-intel`). GitHub's Apple-silicon pool sometimes has no free runner and cancels the job ("not acquired by Runner"); rerun it when that happens.
 - Docs only: `docs/chat-doorbells.md`, a step-by-step setup for the Telegram and Slack doorbells (private secrets file, finding the chat id, creating the Slack webhook, checking it, what each refusal means).
 - Docs only: the chat doorbells are now tested live as well (Telegram and Slack on Windows 11 and Linux, Telegram on macOS 15 Intel); the README lists what was not tested live.

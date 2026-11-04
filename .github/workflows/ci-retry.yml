@@ -1,0 +1,40 @@
+name: CI retry
+
+# GitHub's macOS (Apple-silicon) pool sometimes has no free runner, and the job is cancelled before any step runs
+# ("not acquired by Runner"). That says nothing about the code. When a CI run on main ends with only such jobs not
+# passing, re-run just those jobs once. A real failure (a job that started and failed) is never re-run here.
+# Note: cancelling a queued job by hand looks the same, so a hand-cancelled run on main is re-run once as well.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  actions: write
+
+jobs:
+  retry:
+    if: >-
+      github.event.workflow_run.conclusion != 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.run_attempt < 2
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Re-run the jobs that never got a runner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          jobs=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --paginate)
+          # not passing = neither success nor skipped; never acquired = cancelled with no step that ran
+          not_passing=$(jq -s '[.[].jobs[] | select(.conclusion != "success" and .conclusion != "skipped")] | length' <<<"$jobs")
+          never_acquired=$(jq -s '[.[].jobs[] | select(.conclusion == "cancelled" and ([.steps[] | select(.conclusion != null and .conclusion != "skipped")] | length) == 0)] | length' <<<"$jobs")
+          echo "not passing: $not_passing, never got a runner: $never_acquired"
+          if [ "$not_passing" -gt 0 ] && [ "$not_passing" = "$never_acquired" ]; then
+            sleep 120
+            gh run rerun "$RUN_ID" --failed --repo "$REPO"
+          else
+            echo "Not re-running: nothing failed, or a job really failed."
+          fi
