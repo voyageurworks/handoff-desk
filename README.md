@@ -193,7 +193,7 @@ Whichever you pick, give the agent the rules in your `handoff.md` and tell it to
 | Agent | Status |
 | --- | --- |
 | Bundled stand-in (`stand-in` command) | Tested on every change |
-| Operating systems and shells | Tests run on Linux, macOS and Windows on every change. The quick start runs under bash and zsh on Linux and macOS, and in Windows PowerShell 5.1 by hand |
+| Operating systems and shells | Tests run on Linux and Windows on every change. macOS (Intel and Apple silicon) runs in a separate workflow on every pull request, but GitHub's macOS runners are sometimes unavailable, and then the check says macOS was not verified. The quick start runs under bash and zsh on Linux and macOS, and in Windows PowerShell 5.1 by hand |
 | Cursor, VS Code (Copilot), Claude Desktop, Codex | The config examples in [docs/clients.md](docs/clients.md) are launched by a test and complete an MCP handshake. The editors themselves are not run in CI |
 | Codex, Gemini CLI, Goose, Junie CLI, OpenCode, Kilo Code (CLI), Continue (CLI) | Started the server from the config `handoff-desk config` prints and showed it connected or completed the handshake, on Windows 11 (versions in [docs/clients.md](docs/clients.md#every-other-client)). Not re-run in CI, and not run on macOS or Linux |
 | Telegram and Slack doorbells | The built program was run against a local stand-in for both services: the exact requests, 429, 500, a dropped connection and nothing listening. Not yet against live accounts |

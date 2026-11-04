@@ -8,14 +8,15 @@ on:
 permissions:
   contents: read
 
-# macOS runs on both runner families: macos-latest is Apple silicon (arm64) and macos-15-intel is Intel (x86_64).
-# GitHub's arm64 pool sometimes has no free capacity (jobs cancelled with "not acquired by Runner"); rerun them when that happens.
+# macOS is NOT in this workflow. GitHub's macOS pools are sometimes short of runners, and a job that never starts
+# ("not acquired by Runner") marked every push to main as failed even though everything that ran passed. macOS has its own
+# workflow, macos.yml (pull requests, weekly, on demand), with one required check, "macOS result" (see macos.yml).
 jobs:
   check:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
+        os: [ubuntu-latest, windows-latest]
         node: [22, 24]
     runs-on: ${{ matrix.os }}
     steps:
@@ -29,11 +30,11 @@ jobs:
       - run: pnpm test
 
   shells:
-    # The README quick start under the shells people actually use (macOS ships zsh; Linux usually bash).
+    # The README quick start under the shells people actually use (Linux usually bash; the macOS runs are in macos.yml).
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-15-intel]
+        os: [ubuntu-latest]
         shell: [bash, zsh]
     runs-on: ${{ matrix.os }}
     steps:

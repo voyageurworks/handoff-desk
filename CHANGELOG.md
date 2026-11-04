@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- CI only: macOS moved out of the push CI into its own workflow (`macos.yml`: pull requests, weekly, on demand; Intel and Apple silicon, Node 22 and 24, the quick start under bash and zsh, plus macOS 26) with one required check, `macOS result`. A macOS job that ran and failed blocks the merge; if GitHub assigns no Mac at all, the check passes with a visible warning that macOS was not verified, so a runner shortage no longer marks every push as failed or forces an administrator override. The `CI retry` workflow stays but no longer has macOS jobs to re-run.
+
 - CI only: a small `CI retry` workflow re-runs, once, the macOS jobs that GitHub cancelled before they got a runner. A job that started and failed is never re-run.
 - CI only: macOS jobs run on both Apple silicon (`macos-latest`, macOS 26) and Intel (`macos-15-intel`). GitHub's Apple-silicon pool sometimes has no free runner and cancels the job ("not acquired by Runner"); rerun it when that happens.
 - Docs only: `docs/chat-doorbells.md`, a step-by-step setup for the Telegram and Slack doorbells (private secrets file, finding the chat id, creating the Slack webhook, checking it, what each refusal means).
