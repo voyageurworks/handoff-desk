@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.2.2 (2026-11-04)
+
+No change to the program. This release brings the packaged README and docs up to date with the repository (setup, security and macOS testing notes), and the CI changes below.
+
+- CI only: a new `macOS monthly report` workflow runs on the 1st of each month and posts the facts (macOS jobs passed, failed or without a runner, and any run where macOS was not verified) as a comment on the macOS tracking issue, with a status and a recommendation. A recommendation to close the issue needs runs spanning 60 days.
 
 - CI only: macOS moved out of the push CI into its own workflow (`macos.yml`: pull requests, weekly, on demand; Intel and Apple silicon, Node 22 and 24, the quick start under bash and zsh, plus macOS 26) with one required check, `macOS result`. A macOS job that ran and failed blocks the merge; if GitHub assigns no Mac at all, the check passes with a visible warning that macOS was not verified, so a runner shortage no longer marks every push as failed or forces an administrator override. The `CI retry` workflow stays but no longer has macOS jobs to re-run.
 
