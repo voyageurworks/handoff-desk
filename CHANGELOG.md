@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- CI only: the `macOS monthly report` workflow also writes its facts (fixed words and numbers) to `status.json` on the `macos-report` branch, so an automatic reviewer can read them without the GitHub API.
+
 ## 1.2.2 (2026-11-04)
 
 No change to the program. This release brings the packaged README and docs up to date with the repository (setup, security and macOS testing notes), and the CI changes below.
