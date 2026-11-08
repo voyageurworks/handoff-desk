@@ -1,6 +1,6 @@
 name: macOS monthly report
 
-# On the 1st of every month, summarizes what really happened in the macOS workflow over the last 30 days (jobs passed, failed,
+# On the 1st and the 15th of every month (the 15th is the mid-month check), summarizes what really happened in the macOS workflow over the last 30 days (jobs passed, failed,
 # no runner; runs where macOS was NOT verified) and posts it as a comment on the open "macOS CI:" tracking issue, with a status
 # (QUIET, WATCH or NEEDS ATTENTION) and a recommendation. Facts only: counts, job names and run links. Logic and tests:
 # scripts/macos-report.mjs, src/macosReport.test.ts. It also writes the same facts as a tiny JSON file (fixed words and numbers
@@ -10,7 +10,7 @@ name: macOS monthly report
 # no macOS runs.
 on:
   schedule:
-    - cron: "7 12 1 * *"
+    - cron: "7 12 1,15 * *"
   workflow_dispatch:
     inputs:
       post:
