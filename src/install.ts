@@ -116,7 +116,7 @@ export async function installClient(id: string, options: InstallOptions): Promis
     await unlink(temporary).catch(() => undefined);
     return refuse(`Could not write ${target} (${(error as NodeJS.ErrnoException).code ?? "error"}; is it read-only or open in another program?). ${backup ? `A backup was made at ${backup}, but the file itself was not changed.` : "Nothing was changed."}`);
   }
-  return { code: 0, message: `${client.name}: ${existing ? "updated" : "added"} the handoff entry in ${target}.${backup ? `\nBackup of the old file: ${backup}` : ""}\nRestart ${client.name} to load it.` };
+  return { code: 0, message: `${client.name}: ${existing ? "updated" : "added"} the handoff entry in ${target}.${backup ? `\nBackup of the old file: ${backup}` : ""}\nBefore you restart ${client.name}, run this once so the first start is quick (a cold download can take 15 seconds, and clients report "Disconnected" or a timeout if they give up first):\n  npx -y @voyageurworks/handoff-desk --version\nThen restart ${client.name} to load it.` };
 }
 
 /**

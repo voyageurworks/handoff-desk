@@ -61,5 +61,6 @@ export function nextSteps(dir: string, windows: boolean): string {
       ? `       $env:HANDOFF_DIR = "${shown}"; npx -y @voyageurworks/handoff-desk doctor`
       : `       HANDOFF_DIR="${shown}" npx -y @voyageurworks/handoff-desk doctor`,
     "  4. Start a new Claude Code session and say: Hand this to my agent as a question: reply with pong.",
+    "Tip: run `npx -y @voyageurworks/handoff-desk --version` once before step 2, so the first start is quick (a cold download takes about 15 seconds and clients give up sooner).",
   ].join("\n");
 }

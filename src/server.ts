@@ -21,9 +21,28 @@ export const packageVersion = (JSON.parse(readFileSync(new URL("../package.json"
 const ok = (value: unknown) => ({ content: [{ type: "text" as const, text: typeof value === "string" ? value : JSON.stringify(value, null, 2) }] });
 const failed = (error: unknown) => ({ isError: true, content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }] });
 
+/**
+ * Standard MCP hints, so a client can tell reading from writing and skip an approval prompt for a read. None of the tools deletes
+ * anything. Only the tools that ring a doorbell reach outside this computer (`openWorldHint`).
+ */
+const READ_ONLY = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
+const WRITES = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false };
+const ANNOTATIONS: Record<string, { title: string; readOnlyHint: boolean; destructiveHint: boolean; idempotentHint?: boolean; openWorldHint: boolean }> = {
+  handoff_send: { title: "Hand a task to the agent", ...WRITES, openWorldHint: true },
+  handoff_status: { title: "Post a status line", ...WRITES, openWorldHint: true },
+  handoff_list: { title: "List desk items", ...READ_ONLY },
+  handoff_read: { title: "Read a desk item", ...READ_ONLY },
+  handoff_wait: { title: "Wait for the agent's answer", ...READ_ONLY },
+  handoff_capabilities: { title: "Read the agent's rules", ...READ_ONLY },
+  handoff_inbox: { title: "Read the agent's inbox notes", ...READ_ONLY },
+  handoff_inbox_reply: { title: "Answer an inbox note", ...WRITES, idempotentHint: true },
+  handoff_pending: { title: "List waiting items (agent side)", ...READ_ONLY },
+  handoff_answer: { title: "Answer a waiting item (agent side)", ...WRITES, idempotentHint: true },
+};
+
 /** Registers a tool whose failures come back as tool errors instead of crashing the server. */
 function addTool<Shape extends ZodRawShape>(server: McpServer, name: string, description: string, inputSchema: Shape, handler: (args: z.infer<z.ZodObject<Shape>>) => Promise<unknown>) {
-  server.registerTool(name, { description, inputSchema }, (async (args: z.infer<z.ZodObject<Shape>>) => {
+  server.registerTool(name, { description, inputSchema, annotations: ANNOTATIONS[name] }, (async (args: z.infer<z.ZodObject<Shape>>) => {
     try {
       return ok(await handler(args));
     } catch (error) {

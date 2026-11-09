@@ -2,7 +2,7 @@
 
 [OpenClaw](https://docs.openclaw.ai) is an assistant that runs in the background on your computer (its "Gateway") and talks to you in chat apps such as Telegram. In handoff-desk's terms it is **the agent**: your assistant (Claude Code, Cursor, Codex) writes a note, OpenClaw reads it, does the work within the rules in your `handoff.md`, and writes the answer into the same note.
 
-**What was and was not run.** This page follows OpenClaw's published documentation (docs.openclaw.ai, read in November 2026). The handoff-desk side, including the two answering tools and the wake call, is tested against local stand-ins. We have **not** yet run it against a live OpenClaw Gateway, so the OpenClaw commands below are labelled *documented*. If one fails, `openclaw mcp doctor handoff --probe` and `handoff-desk doctor` say where; please open an issue with the OpenClaw version.
+**What was and was not run.** Run for real: OpenClaw 2026.11.2 (installed from npm into a throwaway home on Windows 11) accepted the `openclaw mcp add` line printed below, `openclaw mcp doctor handoff --probe` reported the server `ok`, and `openclaw mcp probe` listed all 10 tools. Not run: the Gateway service, a Telegram chat, an agent turn (that needs a model) and the wake call against a Gateway. Those steps follow OpenClaw's published documentation (docs.openclaw.ai, read in November 2026) and are *documented*; the handoff-desk side of them is tested against local stand-ins. If one fails, `openclaw mcp doctor handoff --probe` and `handoff-desk doctor` say where; please open an issue with the OpenClaw version.
 
 ```
 your assistant ──handoff_send──▶ Desk/ note ◀──handoff_pending / handoff_answer── OpenClaw
@@ -17,6 +17,8 @@ your assistant ──handoff_send──▶ Desk/ note ◀──handoff_pending /
 
 ## Set it up (about ten minutes)
 
+Shortcut: `npx -y @voyageurworks/handoff-desk setup --agent openclaw` asks two more questions and prints all of the steps below with your folder filled in.
+
 1. **Create the desk and edit the rules.** Run `npx -y @voyageurworks/handoff-desk init` and open the `handoff.md` it creates: say what the agent may do alone, must ask first, and must never do. OpenClaw reads this file through the `handoff_capabilities` tool.
 2. **Add the server to OpenClaw.** On the computer that runs the Gateway, run the command that prints your exact line (it fills in your folder, and uses `cmd /c` on Windows):
 
@@ -24,7 +26,7 @@ your assistant ──handoff_send──▶ Desk/ note ◀──handoff_pending /
    npx -y @voyageurworks/handoff-desk config --client openclaw --dir "<your desk folder>"
    ```
 
-   Run the line it prints, then check it: `openclaw mcp doctor handoff --probe`. The answering side needs only three tools; to expose just those, add `--include 'handoff_pending,handoff_answer,handoff_capabilities'` to the `openclaw mcp add` line.
+   Run the line it prints, then check it: `openclaw mcp doctor handoff --probe`. The answering side needs only three tools; to expose just those, add `--include 'handoff_pending,handoff_answer,handoff_capabilities'` to the `openclaw mcp add` line. The printed line already gives OpenClaw 60 seconds to start the server: its own check allows only 5, and the first `npx` download takes about 15, so without that the add fails with "did not complete initialize within 5s" (run `npx -y @voyageurworks/handoff-desk --version` once first to warm the download).
 3. **Give OpenClaw its standing orders.** Paste this into the `AGENTS.md` of the OpenClaw workspace (OpenClaw loads it into every session):
 
    ```
