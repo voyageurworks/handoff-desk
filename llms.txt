@@ -1,0 +1,20 @@
+# handoff-desk
+
+> handoff-desk is a small MCP server that runs on your computer. When you tell Claude Code, Cursor, Codex or another MCP client to "hand this to my agent", it writes a markdown note into a folder you own, optionally rings a heads-up (email, Telegram or Slack), and later reads the agent's reply from the same note. The agent can be one on the same computer, OpenClaw, or a cloud agent reached through a private git repository. No hosted service, no account, no telemetry. MIT licence, by Voyageur Works.
+
+Set up (Node.js 22 or newer): `npx -y @voyageurworks/handoff-desk setup`
+Demo desk only: `npx -y @voyageurworks/handoff-desk init ~/handoff-demo`
+
+## Docs
+- [README](https://github.com/voyageurworks/handoff-desk#readme): how it works, quick start, settings, safety, limits
+- [Setup prompt for an AI assistant](https://github.com/voyageurworks/handoff-desk/blob/main/docs/setup-prompt.md)
+- [Supported clients and how each was checked](https://github.com/voyageurworks/handoff-desk/blob/main/docs/clients.md)
+- [Using OpenClaw as the agent that answers](https://github.com/voyageurworks/handoff-desk/blob/main/docs/openclaw.md)
+- [Cloud agents over a private git repository](https://github.com/voyageurworks/handoff-desk/blob/main/docs/cloud-agents.md)
+- [Telegram and Slack heads-ups](https://github.com/voyageurworks/handoff-desk/blob/main/docs/chat-doorbells.md)
+- [Agent contract (the note format)](https://github.com/voyageurworks/handoff-desk/blob/main/docs/agent-contract.md)
+- [Troubleshooting](https://github.com/voyageurworks/handoff-desk/blob/main/docs/troubleshooting.md)
+
+## Package
+- [npm: @voyageurworks/handoff-desk](https://www.npmjs.com/package/@voyageurworks/handoff-desk)
+- [Issues](https://github.com/voyageurworks/handoff-desk/issues)
