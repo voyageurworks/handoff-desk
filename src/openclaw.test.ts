@@ -10,6 +10,8 @@ import { runDoctor } from "./doctor.js";
 import { initDesk } from "./init.js";
 import { answerNote, parseNote, renderNote } from "./note.js";
 import { buildServer } from "./server.js";
+import { detectSync } from "./sync.js";
+import { makeRemote, sh } from "./testRepos.js";
 import { wakeAgent, wakeText, wakeUrl } from "./wake.js";
 
 const text = (result: unknown) => (result as { content: Array<{ text: string }> }).content[0].text;
@@ -177,5 +179,61 @@ describe("doctor and config for OpenClaw", () => {
   it("prints the openclaw mcp add command for POSIX and Windows", () => {
     expect(configCommand(["--client", "openclaw", "--dir", "/home/dad/handoff"], "linux").out).toBe('openclaw mcp add handoff --command npx --arg -y --arg \'@voyageurworks/handoff-desk\' --env HANDOFF_DIR="/home/dad/handoff"\n');
     expect(configCommand(["--client", "openclaw", "--dir", "C:/Users/dad/handoff"], "win32").out).toBe('openclaw mcp add handoff --command cmd --arg /c --arg npx --arg -y --arg \'@voyageurworks/handoff-desk\' --env HANDOFF_DIR="C:/Users/dad/handoff"\n');
+  });
+});
+
+describe("two computers: the sender on one clone, the agent on another", () => {
+  it("an answer written through handoff_answer on the agent's clone reaches the sender through git", async () => {
+    const { cloneA, cloneB, bare } = await makeRemote();
+    const env = { HANDOFF_GIT_NAME: "Desk User", HANDOFF_GIT_EMAIL: "user@example.com" };
+    const open = async (dir: string, name: string) => {
+      const merged = { HANDOFF_DIR: dir, ...env };
+      const server = buildServer(loadConfig(merged), await detectSync(dir, merged));
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name, version: "1.0.0" });
+      await client.connect(clientSide);
+      return client;
+    };
+    const sender = await open(cloneA, "claude-code");
+    const agent = await open(cloneB, "openclaw");
+    const sent = JSON.parse(text(await call(sender, "handoff_send", { type: "question", title: "Ping", request: "Reply with pong." })));
+    expect(sent.id).toBe(1);
+    const pending = JSON.parse(text(await call(agent, "handoff_pending")));
+    expect(pending.map((item: { id: number }) => item.id)).toEqual([1]);
+    const answered = JSON.parse(text(await call(agent, "handoff_answer", { id: 1, reply: "pong" })));
+    expect(answered).toMatchObject({ answered: true, status: "done", committed: true });
+    expect(sh(bare, ["log", "--format=%s", "main"])).toContain("Handoff: answered 1 (done)");
+    const read = JSON.parse(text(await call(sender, "handoff_read", { id: 1 })));
+    expect(read).toMatchObject({ status: "done", reply: "pong" });
+    expect(JSON.parse(text(await call(agent, "handoff_pending")))).toEqual([]);
+    // Answering again changes nothing and makes no commit.
+    const before = sh(bare, ["rev-list", "--count", "main"]);
+    expect(JSON.parse(text(await call(agent, "handoff_answer", { id: 1, reply: "again" })))).toMatchObject({ answered: false });
+    expect(sh(bare, ["rev-list", "--count", "main"])).toBe(before);
+  });
+});
+
+describe("review follow-ups", () => {
+  it("two notes with the same number are answered one after the other", async () => {
+    const { client, dir } = await connect();
+    const { writeFile, mkdir } = await import("node:fs/promises");
+    await mkdir(path.join(dir, "Desk"), { recursive: true });
+    await writeFile(path.join(dir, "Desk", "2031-02-03 Item 05 - First.md"), renderNote({ id: 5, type: "question", created: "2031-02-03T04:00:00+00:00", title: "First", request: "a" }));
+    await writeFile(path.join(dir, "Desk", "2031-02-03 Item 05 - Second.md"), renderNote({ id: 5, type: "question", created: "2031-02-03T05:00:00+00:00", title: "Second", request: "b" }));
+    expect(JSON.parse(text(await call(client, "handoff_answer", { id: 5, reply: "one" })))).toMatchObject({ answered: true });
+    expect(JSON.parse(text(await call(client, "handoff_answer", { id: 5, reply: "two" })))).toMatchObject({ answered: true });
+    expect(JSON.parse(text(await call(client, "handoff_answer", { id: 5, reply: "three" })))).toMatchObject({ answered: false });
+    expect(JSON.parse(text(await call(client, "handoff_pending")))).toEqual([]);
+  });
+  it("refuses a blank reply and leaves the item waiting", async () => {
+    const { client } = await connect();
+    await call(client, "handoff_send", { type: "question", title: "Ping", request: "Reply with pong." });
+    expect(failed(await call(client, "handoff_answer", { id: 1, reply: "   \n " }))).toBe(true);
+    expect(JSON.parse(text(await call(client, "handoff_pending")))).toHaveLength(1);
+  });
+  it("keeps a note's own line ending when only some lines are CRLF", () => {
+    const mixed = waiting().replace("status: waiting", "status: waiting\r");
+    expect(answerNote(mixed, "ok", "done", "2031-02-03T05:00:00+00:00")).not.toContain("\r\n");
   });
 });

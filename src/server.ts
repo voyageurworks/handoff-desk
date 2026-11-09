@@ -168,7 +168,7 @@ export function buildServer(config: HandoffConfig, syncSource: SyncSource = null
     {}, async () => (await ready()).desk.pending());
 
   addTool(server, "handoff_answer", "For the agent that ANSWERS notes (a sender never calls this): writes the reply under `## Reply`, sets the status to done (or declined, when it will not do it) and the answered time, and pushes it when the desk syncs through git. Only a waiting item can be answered; a repeat changes nothing. Never put passwords, codes or keys in a reply.",
-    { id: z.number().int().positive(), reply: z.string().min(1).max(8000), status: z.enum(["done", "declined"]).default("done") },
+    { id: z.number().int().positive(), reply: z.string().trim().min(1).max(8000), status: z.enum(["done", "declined"]).default("done") },
     async args => (await ready()).desk.answer(args.id, args.reply, args.status as AnswerStatus));
 
   return server;

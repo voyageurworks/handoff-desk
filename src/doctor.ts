@@ -125,7 +125,7 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorResu
   }
 
   const any = mailParts.some(Boolean) || Boolean(t) || Boolean(s) || Boolean(w);
-  add("Doorbells", any ? "info" : "warn", any ? "At least one is set." : "None set: nothing tells the agent a note is waiting, so it only sees notes when it looks at the desk.");
+  add("Doorbells", any ? "info" : "warn", any ? "At least one is set." : "None set: nothing tells the agent a note is waiting, so it only sees notes when it looks at the desk (an email, Telegram or Slack doorbell, an OpenClaw wake call or a scheduled check all fix that).");
 
   const waiting = await pendingCount(config.outbox);
   add("Retry list", waiting ? "warn" : "ok", waiting ? `${waiting} chat doorbell(s) did not go through and will be re-sent.` : "Nothing waiting.");

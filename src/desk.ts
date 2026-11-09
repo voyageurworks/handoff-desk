@@ -196,7 +196,9 @@ export function createDesk(config: DeskConfig) {
     const secret = findSecret(reply);
     if (secret) throw new Error(`Refused: this reply looks like it contains ${secret}. Desk notes never hold passwords, codes or keys.`);
     return desk.writeFiles(async () => {
-      const found = (await readAll()).filter(candidate => candidate.id === id).sort((a, b) => a.created.localeCompare(b.created) || a.file.localeCompare(b.file))[0];
+      // Two senders can briefly file the same number: answer the oldest one that is still waiting, so the other is not stuck behind it.
+      const same = (await readAll()).filter(candidate => candidate.id === id).sort((a, b) => a.created.localeCompare(b.created) || a.file.localeCompare(b.file));
+      const found = same.find(candidate => candidate.status === "waiting") ?? same[0];
       if (!found) throw new Error(`No desk item #${id}.`);
       if (found.status !== "waiting") return { files: [], message: "", result: { id, answered: false, status: found.status, note: found.status === "info" ? "This item is a status line; nothing to answer." : `Item #${id} is already ${found.status}; nothing was changed.` } };
       const full = path.join(config.deskDir, found.file);

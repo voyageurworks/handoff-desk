@@ -48,7 +48,7 @@ Also enforced before anything is sent:
 
 - the address must be `https://`, or `http://` to this computer only, must end in `/wake`, and may not carry a user name, password, query or fragment; redirects are refused;
 - the hook token must be one run of visible characters, 8 to 512 long (no spaces or line breaks), is sent only in the `Authorization` header, and never appears in a result, an error, a log or `doctor` output;
-- a failed wake never fails the send: the note is already written, and `handoff_send` reports `wake: { rung: false, reason }`.
+- a failed wake never fails the send: the note is already written, and `handoff_send` reports `wake: { rung: false, reason }`. It is not retried (unlike the Telegram and Slack doorbells), so keep the scheduled check as a backstop if a missed wake would matter.
 
 Keep the hook token separate from the Gateway's own password, as OpenClaw advises.
 
