@@ -2,8 +2,8 @@
 
 ## The client shows no handoff tools
 
-- Did you build? Run `npm install && npm run build` (or the pnpm equivalent) and check that `dist/main.js` exists.
-- Is the path in the config **absolute** and correct? Relative paths break when the client starts from another folder. On Windows use forward slashes.
+- Run `npx -y @voyageurworks/handoff-desk doctor` first: it checks Node, the desk folder, sync and the doorbells, and says what to fix. `npx -y @voyageurworks/handoff-desk --version` shows which version `npx` found.
+- Starting from a clone instead of `npx` (contributors only)? Build it (`pnpm install && pnpm build`) and check that `dist/main.js` exists, and use its **absolute** path in the config (relative paths break when the client starts from another folder; on Windows use forward slashes).
 - Is Node 22 or newer on the client's `PATH`? Run `node --version`. A client started from a launcher may not see the Node you use in a terminal; put the full path to `node` in the command if needed.
 - Restart the client after editing its config. Claude Code: `claude mcp list` shows whether the server connected.
 
@@ -38,6 +38,8 @@ If the answer never comes, the agent probably has not noticed the note. Nothing 
 1. The agent can read the desk (the folder, or the private git repository) and can write its reply back (and push it, for a cloud agent).
 2. The doorbell is configured if your agent only reacts to email. Without it, an agent that checks the desk on a schedule only notices notes on its own schedule.
 3. With git sync, the note actually reached the remote: `git log origin/main` in the desk folder shows a `Handoff:` commit.
+
+If a read or a wait comes back with a `stale` note, the shared repository could not be reached within 15 seconds, so you are seeing this computer's last copy; call again when the network is back (nothing is lost).
 
 To rule out the agent, run the stand-in (`node dist/main.js stand-in`) and hand it a question.
 

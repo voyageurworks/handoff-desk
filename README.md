@@ -96,7 +96,7 @@ npx -y @voyageurworks/handoff-desk stand-in
 
 **5. Clean up.** Stop the stand-in (Ctrl+C) and run `claude mcp remove handoff-demo`. Delete `~/handoff-demo` if you like.
 
-Something not working? See [docs/troubleshooting.md](docs/troubleshooting.md).
+`init` prints these commands again with your real folder filled in, and `npx -y @voyageurworks/handoff-desk --help` lists every command. Something not working? Run `npx -y @voyageurworks/handoff-desk doctor`, then see [docs/troubleshooting.md](docs/troubleshooting.md).
 
 <details>
 <summary>Building from source instead (contributors)</summary>

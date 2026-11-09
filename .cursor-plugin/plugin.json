@@ -1,7 +1,7 @@
 {
   "name": "handoff-desk",
   "description": "Hand tasks from Claude Code, Cursor or Codex to a personal agent through a folder of markdown notes, and read the reply back.",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "author": { "name": "Voyageur Works" },
   "homepage": "https://github.com/voyageurworks/handoff-desk#readme",
   "repository": "https://github.com/voyageurworks/handoff-desk",

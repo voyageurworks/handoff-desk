@@ -149,3 +149,19 @@ describe("handoff server", () => {
     expect(failed(await client.callTool({ name: "handoff_read", arguments: { id: 42 } }))).toBe(true);
   });
 });
+
+describe("one clock for the whole server", () => {
+  it("an inbox reply is dated with the server's clock, like a note is", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "handoff clock-"));
+    await initDesk(dir);
+    await mkdir(path.join(dir, "Inbox"), { recursive: true });
+    await writeFile(path.join(dir, "Inbox", "idea.md"), "# Idea\n\nTry it.\n");
+    const server = buildServer(loadConfig({ HANDOFF_DIR: dir, HANDOFF_TZ: "UTC" }), null, fetch, { now: () => new Date("2031-02-03T04:05:06Z") });
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverSide);
+    const client = new Client({ name: "test", version: "1.0.0" });
+    await client.connect(clientSide);
+    await client.callTool({ name: "handoff_inbox_reply", arguments: { file: "idea.md", reply: "Will do." } });
+    expect(await readFile(path.join(dir, "Inbox", "idea.md"), "utf8")).toMatch(/reply \(2031-02-0[23]T\d\d:05:06[+-]\d\d:\d\d\)/);
+  });
+});

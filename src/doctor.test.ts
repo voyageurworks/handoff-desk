@@ -184,3 +184,24 @@ describe("the doctor command in the built program", () => {
     expect(bad.stdout + bad.stderr).not.toContain(token.split(":")[1]);
   }, 180_000);
 });
+
+describe("the new checks", () => {
+  it("lists an ignored setting as a warning", async () => {
+    const { dir, state } = await fresh();
+    const result = await runDoctor({ env: base(dir, state, { HANDOFF_SMTP_PORT: "mail" }) });
+    expect(by(result.checks, "Setting").status).toBe("warn");
+    expect(by(result.checks, "Setting").detail).toMatch(/HANDOFF_SMTP_PORT/);
+  });
+  it("says what the server will do with a desk that is not a git work tree", async () => {
+    const { dir, state } = await fresh();
+    const result = await runDoctor({ env: { HANDOFF_DIR: dir, HANDOFF_STATE_DIR: state, HANDOFF_SYNC: "auto" } });
+    expect(by(result.checks, "Desk sync").status).toBe("info");
+    expect(by(result.checks, "Desk sync").detail).toMatch(/plain local folder/);
+  });
+  it("HANDOFF_SYNC=git on a plain folder is a failure that says why", async () => {
+    const { dir, state } = await fresh();
+    const result = await runDoctor({ env: { HANDOFF_DIR: dir, HANDOFF_STATE_DIR: state, HANDOFF_SYNC: "git" } });
+    expect(by(result.checks, "Desk sync").status).toBe("fail");
+    expect(result.code).toBe(1);
+  });
+});

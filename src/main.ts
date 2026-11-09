@@ -4,16 +4,17 @@ import os from "node:os";
 import { configCommand } from "./clientConfig.js";
 import { expandHome, loadConfig, syncEnv } from "./config.js";
 import { formatDoctor, runDoctor } from "./doctor.js";
-import { initDesk } from "./init.js";
+import { initDesk, nextSteps } from "./init.js";
 import { INSTALLABLE, installClient } from "./install.js";
-import { buildServer } from "./server.js";
+import { buildServer, packageVersion } from "./server.js";
 import { runStandIn } from "./standin.js";
 import { detectSync, ensureClone, git, type SyncHandle } from "./sync.js";
 
-const USAGE = "Usage: handoff-desk [init [dir] | stand-in [--once] [--git] | config --client <name> | config --list | install --client <name> | doctor]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)\n  install        add the server to a client's own settings file (dry run unless --write)\n  doctor         check the setup and say what to fix (--client <name> reads that client's settings; --ping sends a test message to Telegram and Slack)";
+const USAGE = "Usage: handoff-desk [--help | --version | init [dir] | stand-in [--once] [--git] | config --client <name> | config --list | install --client <name> | doctor]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)\n  install        add the server to a client's own settings file (dry run unless --write)\n  doctor         check the setup and say what to fix (--client <name> reads that client's settings; --ping sends a test message to Telegram and Slack)";
 
 const [command, ...rest] = process.argv.slice(2);
 const config = loadConfig();
+if (command !== "doctor") for (const warning of config.warnings) console.error(`handoff-desk: ${warning}`);
 // Dates in notes and emails read HANDOFF_TZ; when it came from the settings file, the process must see it too.
 if (config.tz) process.env.HANDOFF_TZ ??= config.tz;
 
@@ -27,13 +28,20 @@ async function resolveSync(): Promise<SyncHandle | null> {
   return detectSync(config.dir, syncEnv(config));
 }
 
-if (command === undefined) {
+if (command === "--help" || command === "-h" || command === "help") {
+  console.log(`${USAGE}
+
+First time? Run: handoff-desk init   (it prints the exact next steps)
+Docs: https://github.com/voyageurworks/handoff-desk#readme`);
+} else if (command === "--version" || command === "-v" || command === "version") {
+  console.log(packageVersion);
+} else if (command === undefined) {
   await buildServer(config, resolveSync).connect(new StdioServerTransport());
 } else if (command === "init") {
   const dir = rest[0] ? expandHome(rest[0]) : config.dir;
   const { created, kept } = await initDesk(dir, { inboxDir: config.inboxDir });
   const inRepo = await git(dir, ["rev-parse", "--is-inside-work-tree"]).then(() => true, () => false);
-  console.log(`Desk folder: ${dir}\nCreated: ${created.join(", ") || "nothing"}\nKept as it was: ${kept.join(", ") || "nothing"}\nNext: edit ${dir}/handoff.md, then add the server to your MCP client.${inRepo ? "\nThis folder is in a git repository: keep that repository PRIVATE, because desk notes are pushed to its remote." : ""}`);
+  console.log(`Desk folder: ${dir}\nCreated: ${created.join(", ") || "nothing"}\nKept as it was: ${kept.join(", ") || "nothing"}\n${nextSteps(dir, process.platform === "win32")}${inRepo ? "\nThis folder is in a git repository: keep that repository PRIVATE, because desk notes are pushed to its remote." : ""}`);
 } else if (command === "stand-in") {
   const deskDir = config.desk.deskDir;
   let sync: SyncHandle | undefined;
