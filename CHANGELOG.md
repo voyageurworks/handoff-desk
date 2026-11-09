@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- CI only: the `Publish to MCP Registry` workflow failed to start ("startup_failure") since Dependabot moved `sigstore/cosign-installer` to a commit the repository's Actions settings do not allow. The allowed pin is restored, Dependabot now leaves that one action alone, and the workflow says why. No change to the program or the 1.2.3 package.
+
 ## 1.2.3 (2026-11-08)
 
 Reliability and first-run fixes. Tool results are unchanged (new fields and flags only), and the note format is unchanged.

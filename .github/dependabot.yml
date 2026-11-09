@@ -19,3 +19,6 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+    ignore:
+      # Pinned to the one commit the repository's Actions settings allow (see publish-mcp.yml); a bump to any other commit breaks the workflow.
+      - dependency-name: "sigstore/cosign-installer"

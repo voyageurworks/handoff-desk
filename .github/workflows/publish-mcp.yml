@@ -37,8 +37,10 @@ jobs:
           test "$(jq -r '.packages[0].version' server.json)" = "$version"
           test "$(npm view "$package@$version" mcpName)" = "$name"
           echo "server.json lists $name $version; npm has $package@$version with the same mcpName."
+      # This exact commit is the only third-party action the repository's Actions settings allow. A newer pin makes GitHub refuse to
+      # start the whole workflow ("startup_failure", no jobs). To move to a newer release, add its commit to the allowed actions first.
       - name: Install cosign
-        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Download and verify mcp-publisher
         run: |
           set -euo pipefail
