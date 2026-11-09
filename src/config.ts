@@ -29,6 +29,8 @@ export type HandoffConfig = {
   prefix: string;
   /** Time zone for note and email dates (HANDOFF_TZ); otherwise the system zone. */
   tz?: string;
+  /** Settings that were ignored or look wrong, in words (never a secret). The server prints them to stderr; `doctor` lists them. */
+  warnings: string[];
 };
 
 /** A leading "~" means the home folder. Shells like PowerShell and cmd, and JSON client configs, do not expand it themselves. */
@@ -70,11 +72,14 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConf
   const env = withEnvFile(rawEnv);
   const dir = env.HANDOFF_DIR ? expandHome(env.HANDOFF_DIR) : path.join(os.homedir(), "handoff");
   const port = env.HANDOFF_SMTP_PORT ? Number(env.HANDOFF_SMTP_PORT) : undefined;
+  // A typo here used to fall back to 465 without a word, and the mail then failed for a reason nobody could see.
+  const warnings: string[] = [];
+  if (env.HANDOFF_SMTP_PORT && !(Number.isInteger(port) && port! >= 1 && port! <= 65535)) warnings.push("HANDOFF_SMTP_PORT ignored; it must be a whole number from 1 to 65535 (using 465).");
   const mode = (env.HANDOFF_SYNC || "auto").toLowerCase();
   return {
     dir,
     desk: { deskDir: path.join(dir, "Desk") },
-    doorbell: { user: env.HANDOFF_MAIL_USER, pass: env.HANDOFF_MAIL_APP_PASSWORD, passCommand: env.HANDOFF_MAIL_PASSWORD_COMMAND, to: env.HANDOFF_MAIL_TO, host: env.HANDOFF_SMTP_HOST, port: Number.isInteger(port) ? port : undefined },
+    doorbell: { user: env.HANDOFF_MAIL_USER, pass: env.HANDOFF_MAIL_APP_PASSWORD, passCommand: env.HANDOFF_MAIL_PASSWORD_COMMAND, to: env.HANDOFF_MAIL_TO, host: env.HANDOFF_SMTP_HOST, port: Number.isInteger(port) && port! >= 1 && port! <= 65535 ? port : undefined },
     chat: {
       ...(env.HANDOFF_TELEGRAM_BOT_TOKEN || env.HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND || env.HANDOFF_TELEGRAM_CHAT_ID ? { telegram: { token: env.HANDOFF_TELEGRAM_BOT_TOKEN, tokenCommand: env.HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND, chatId: env.HANDOFF_TELEGRAM_CHAT_ID } } : {}),
       ...(env.HANDOFF_SLACK_WEBHOOK_URL || env.HANDOFF_SLACK_WEBHOOK_COMMAND ? { slack: { webhook: env.HANDOFF_SLACK_WEBHOOK_URL, webhookCommand: env.HANDOFF_SLACK_WEBHOOK_COMMAND } } : {}),
@@ -89,5 +94,6 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConf
     identity: env.HANDOFF_GIT_NAME && env.HANDOFF_GIT_EMAIL ? { name: env.HANDOFF_GIT_NAME, email: env.HANDOFF_GIT_EMAIL } : undefined,
     prefix: env.HANDOFF_SUBJECT_PREFIX || "Handoff",
     tz: env.HANDOFF_TZ || undefined,
+    warnings,
   };
 }

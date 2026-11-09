@@ -2,7 +2,7 @@ import { lstat, mkdir, readdir, readFile, unlink, writeFile } from "node:fs/prom
 import path from "node:path";
 import { withLock } from "./lock.js";
 import { findSecret, localIso, nextId, noteFileName, noteId, parseNote, renderNote, safeTitle, type Item, type NoteType } from "./note.js";
-import { commitAndPush, git, pullRebase, PushFailedError, pushPending, type SyncHandle } from "./sync.js";
+import { commitAndPush, git, pullRebase, PushFailedError, pushPending, READ_GIT_TIMEOUT_MS, type SyncHandle } from "./sync.js";
 
 /**
  * `deskDir`: where notes live. `rootDir`: the folder holding handoff.md, Desk/ and Inbox/ (default: deskDir's parent).
@@ -26,18 +26,18 @@ export function createDesk(config: DeskConfig) {
   // Cursor session runs its own server). Each operation first pulls, then delivers any commit an earlier failed push
   // left. Reads (`offlineOk`) still answer when the pull fails, from this clone, with a `stale` reason.
   let queue: Promise<unknown> = Promise.resolve();
-  const serial = <T>(task: (stale?: string) => Promise<T>, options: { offlineOk?: boolean } = {}): Promise<T> => {
+  const serial = <T>(task: (stale?: string) => Promise<T>, options: { offlineOk?: boolean; pullMs?: number } = {}): Promise<T> => {
     if (!sync) return task();
     const locked = async () => (await config.prepare?.(), withLock(sync.gitDir, async () => {
       const stale = (error: unknown) => `Couldn't update the desk from the remote, so this is this computer's last copy and may be out of date: ${error instanceof Error ? error.message : String(error)}`;
       try {
-        await pullRebase(sync.root, sync.identity);
+        await pullRebase(sync.root, sync.identity, options.offlineOk ? options.pullMs ?? READ_GIT_TIMEOUT_MS : undefined);
       } catch (error) {
         if (!options.offlineOk) throw error;
         return task(stale(error));
       }
       try {
-        await pushPending(sync.root);
+        await pushPending(sync.root, options.offlineOk ? READ_GIT_TIMEOUT_MS : undefined);
       } catch (error) {
         if (!options.offlineOk) throw error;
         return task(stale(error));
@@ -163,14 +163,14 @@ export function createDesk(config: DeskConfig) {
     }
   }
 
-  const read = (id: number): Promise<Item & { path: string; stale?: string; warning?: string }> => serial(async stale => {
+  const read = (id: number, pullMs?: number): Promise<Item & { path: string; stale?: string; warning?: string }> => serial(async stale => {
     // Two senders can briefly file the same number (the second renames its note when it notices); the older note is shown.
     const matches = (await readAll()).filter(candidate => candidate.id === id).sort((a, b) => a.created.localeCompare(b.created) || a.file.localeCompare(b.file));
     const item = matches[0];
     if (!item) throw new Error(stale ? `No desk item #${id} in this computer's copy. ${stale}` : `No desk item #${id}.`);
     const warning = matches.length > 1 ? `Another note also has the number #${id} (${matches[1].file}); this is the older one. The newer one is renumbered when its sender next syncs.` : undefined;
     return { ...item, path: `${folder}/${item.file}`, ...(stale ? { stale } : {}), ...(warning ? { warning } : {}) };
-  }, { offlineOk: true });
+  }, { offlineOk: true, pullMs });
 
   /** Re-reads an item until it is no longer waiting, for at most `maxMs`. */
   async function wait(id: number, options: { maxMs: number; everyMs: number; sleep?: (ms: number) => Promise<void>; clock?: () => number }): Promise<{ item: Item & { path: string; stale?: string; warning?: string }; answered: boolean; waitedMs: number }> {
@@ -185,7 +185,8 @@ export function createDesk(config: DeskConfig) {
       const step = Math.min(options.everyMs, options.maxMs - elapsed());
       await sleep(step);
       slept += step;
-      item = await read(id);
+      // A slow remote must not push the whole call past what the client waits: later reads get only the time that is left (and a little more).
+      item = await read(id, Math.max(3_000, Math.min(READ_GIT_TIMEOUT_MS, options.maxMs - elapsed() + 5_000)));
     }
     return { item, answered: item.status !== "waiting", waitedMs: elapsed() };
   }

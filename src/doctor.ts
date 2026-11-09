@@ -4,10 +4,11 @@ import os from "node:os";
 import { promisify } from "node:util";
 import { capabilitiesIn } from "./capabilities.js";
 import { CLIENTS } from "./clientConfig.js";
-import { loadConfig } from "./config.js";
+import { loadConfig, syncEnv } from "./config.js";
 import { clientEnv } from "./install.js";
 import { ringSlack, ringTelegram, validSlackWebhook, validTelegramChat, validTelegramToken } from "./notify.js";
 import { pendingCount } from "./outbox.js";
+import { detectSync } from "./sync.js";
 
 /**
  * `handoff-desk doctor`: checks the setup and says what to fix. It reads settings the way the server does (and, with
@@ -71,9 +72,19 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorResu
     add("Git sync", "info", "Off: the desk is a plain local folder.");
   } else {
     const git = await run("git", ["--version"]).then(result => result.stdout.trim(), () => null);
-    if (git) add("Git sync", "ok", `${git}; sync is ${config.sync}.`);
-    else add("Git sync", config.sync === "git" ? "fail" : "warn", "git was not found, so the desk cannot sync.");
+    if (git) {
+      add("Git sync", "ok", `${git}; sync is ${config.sync}.`);
+      // What the server will actually do with this folder, so a desk that was meant to sync is not found out to be local-only later.
+      if (folder?.isDirectory() && !config.remote) {
+        const found = await detectSync(config.dir, syncEnv(config, env)).catch(error => error as Error);
+        if (found instanceof Error) add("Desk sync", "fail", found.message);
+        else if (found) add("Desk sync", "ok", "The desk is a git work tree with an upstream: notes are committed and pushed.");
+        else add("Desk sync", "info", "The desk is a plain local folder (not a git work tree with an upstream branch). Fine for an agent on this computer; a cloud agent needs a private git repository (docs/cloud-agents.md).");
+      }
+    } else add("Git sync", config.sync === "git" ? "fail" : "warn", "git was not found, so the desk cannot sync.");
   }
+
+  for (const warning of config.warnings) add("Setting", "warn", warning);
 
   const mail = config.doorbell;
   const mailParts = [mail.user, mail.pass, mail.passCommand, mail.to];

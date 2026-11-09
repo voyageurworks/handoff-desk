@@ -28,9 +28,12 @@ const scrub = (text: string) => text.replace(/([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/
 /** Only transports a desk should ever use: `ext::` runs a command, and the old `git://` is unencrypted. */
 const ALLOWED_PROTOCOLS = "file:https:ssh";
 
-export async function git(cwd: string, args: string[]): Promise<string> {
+/** A read (list, read, wait) gives up on the remote sooner and answers from this computer's copy, so it never outlasts an MCP client's own limit. */
+export const READ_GIT_TIMEOUT_MS = 15_000;
+
+export async function git(cwd: string, args: string[], timeoutMs: number = GIT_TIMEOUT_MS): Promise<string> {
   try {
-    const { stdout } = await run("git", args, { cwd, windowsHide: true, maxBuffer: 10 * 1024 * 1024, timeout: GIT_TIMEOUT_MS, env: { ...process.env, ...NO_PROMPT_ENV, GIT_ALLOW_PROTOCOL: ALLOWED_PROTOCOLS } });
+    const { stdout } = await run("git", args, { cwd, windowsHide: true, maxBuffer: 10 * 1024 * 1024, timeout: timeoutMs, env: { ...process.env, ...NO_PROMPT_ENV, GIT_ALLOW_PROTOCOL: ALLOWED_PROTOCOLS } });
     return stdout.trim();
   } catch (error) {
     // Whatever is thrown on, the secret must not travel with it.
@@ -51,13 +54,13 @@ const gitMessage = (error: unknown) => {
  * conflict with what was pulled, they stay in `git stash`, the clone is left clean and current, and the error says so:
  * nothing is lost, and the next call works.
  */
-export async function pullRebase(cwd: string, identity?: Identity): Promise<void> {
+export async function pullRebase(cwd: string, identity?: Identity, timeoutMs?: number): Promise<void> {
   const dirty = Boolean(await git(cwd, ["status", "--porcelain", "--untracked-files=no"]).catch(() => ""));
   // A stash is a commit, so it needs an identity even when the repository has none configured.
   const who = identityArgs(identity ?? { name: "handoff-desk", email: "handoff-desk@localhost" });
   if (dirty) await git(cwd, [...who, "stash", "push", "--quiet", "--message", "handoff-desk: your uncommitted edits"]);
   try {
-    await git(cwd, [...identityArgs(identity), "pull", "--rebase", "--quiet"]);
+    await git(cwd, [...identityArgs(identity), "pull", "--rebase", "--quiet"], timeoutMs);
   } catch (error) {
     await git(cwd, ["rebase", "--abort"]).catch(() => undefined);
     if (dirty) await git(cwd, ["stash", "pop", "--quiet"]).catch(() => undefined);
@@ -79,10 +82,10 @@ export async function pullRebase(cwd: string, identity?: Identity): Promise<void
 }
 
 /** Pushes commits an earlier failed push left in the clone. Returns how many went up. */
-export async function pushPending(cwd: string): Promise<number> {
+export async function pushPending(cwd: string, timeoutMs?: number): Promise<number> {
   const ahead = Number(await git(cwd, ["rev-list", "--count", "@{u}..HEAD"]).catch(() => "0"));
   if (!ahead) return 0;
-  await git(cwd, ["push", "--quiet"]);
+  await git(cwd, ["push", "--quiet"], timeoutMs);
   return ahead;
 }
 

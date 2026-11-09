@@ -15,7 +15,7 @@ import { localIso, senderFrom } from "./note.js";
 import type { SyncHandle } from "./sync.js";
 
 /** The package's own version, so MCP clients see what is actually installed (src/ and dist/ both sit one level below package.json). */
-const packageVersion = (JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
+export const packageVersion = (JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
 
 const ok = (value: unknown) => ({ content: [{ type: "text" as const, text: typeof value === "string" ? value : JSON.stringify(value, null, 2) }] });
 const failed = (error: unknown) => ({ isError: true, content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }] });
@@ -156,7 +156,7 @@ export function buildServer(config: HandoffConfig, syncSource: SyncSource = null
         // A link would let a reply be written into some other file.
         if (info.isSymbolicLink() || info.nlink > 1) throw new Error(`Refused: ${args.file} is a symbolic or hard link, not a regular note file.`);
         const before = await readFile(target, "utf8");
-        const after = replyToInbox(before, args.reply, localIso(new Date()));
+        const after = replyToInbox(before, args.reply, localIso(now()));
         const changed = after !== before;
         if (changed) await writeFile(target, after, "utf8");
         return { files: changed ? [target] : [], message: `Handoff: reply to ${args.file}`, result: { file: args.file, replied: changed } };

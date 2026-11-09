@@ -80,3 +80,14 @@ describe("leading ~ in paths", () => {
     spy.mockRestore();
   });
 });
+
+describe("settings that are ignored say so", () => {
+  it("a bad HANDOFF_SMTP_PORT is reported in warnings and falls back to the default", () => {
+    for (const bad of ["abc", "0", "70000", "46.5"]) {
+      const config = loadConfig({ HANDOFF_SMTP_PORT: bad });
+      expect(config.doorbell.port).toBeUndefined();
+      expect(config.warnings.join(" ")).toMatch(/HANDOFF_SMTP_PORT ignored/);
+    }
+    expect(loadConfig({ HANDOFF_SMTP_PORT: "587" })).toMatchObject({ doorbell: { port: 587 }, warnings: [] });
+  });
+});

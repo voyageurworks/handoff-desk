@@ -3,7 +3,8 @@ import { mkdir, open, readFile, stat, unlink, utimes } from "node:fs/promises";
 import path from "node:path";
 
 const LOCK_STALE_MS = 2 * 60 * 1000;
-const LOCK_WAIT_MS = 60 * 1000;
+/** Shorter than the roughly 60 seconds an MCP client waits for a tool call, so the "busy" message arrives instead of a client timeout. */
+const LOCK_WAIT_MS = 45 * 1000;
 
 /**
  * Breaks a dead lock. Only one caller at a time may break (it holds `<lock>.break`), and it checks the age again once it

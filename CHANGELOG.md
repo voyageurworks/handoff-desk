@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 1.2.3 (2026-11-08)
+
+Reliability and first-run fixes. Tool results are unchanged (new fields and flags only), and the note format is unchanged.
+
+- **A slow remote no longer outlasts your client.** `handoff_list`, `handoff_read`, `handoff_wait`, `handoff_capabilities` and `handoff_inbox` now give up on the shared repository after 15 seconds (it was 60) and answer from this computer's copy with the existing `stale` note. `handoff_wait` gives each later read only the time left in the wait, so a 50-second wait on a hanging remote ends in about a minute at worst instead of several. Writes (`handoff_send`, `handoff_inbox_reply`) keep the full 60-second git limit, because they must not be cut short.
+- **"The desk is busy" arrives before the client gives up.** The cross-process lock now waits 45 seconds (was 60), so the clear message reaches you instead of a client timeout.
+- **`handoff_inbox_reply` uses the server's clock**, like every note does (it read the system clock directly).
+- **A bad `HANDOFF_SMTP_PORT` is no longer silent.** A value that is not a whole number from 1 to 65535 used to fall back to 465 without a word and the mail then failed for no visible reason. The server now says so on stderr, and `doctor` lists it as a warning. The config object gained a `warnings` list.
+- **`doctor` says what the server will do with the desk folder**: a new `Desk sync` line reports whether it is a git work tree with an upstream (notes are pushed), a plain local folder (fine on this computer, not enough for a cloud agent), or, with `HANDOFF_SYNC=git`, why it cannot sync.
+- **`handoff-desk --help` and `--version`** (also `-h`, `-v`, `help`, `version`) print the usage or the version and exit 0. Before, they printed the usage on stderr and exited 2, as if they were mistakes.
+- **`init` ends with the exact next steps for the folder it made**: the `claude mcp add` command (the Windows form with the quoted double dash and `cmd /c` that PowerShell 5.1 needs), the `doctor` command with `HANDOFF_DIR` set, and the first sentence to say to Claude.
+- Docs: troubleshooting now starts from the `npx` install most people use (the "did you build?" step is for contributors), and says what a `stale` answer and a short `handoff_wait` mean.
+- Tests: 10 new tests (command line, `init` steps, bad port, `doctor` sync lines, inbox clock).
+
 - Tests only: `src/freeRunners.test.ts` fails if a workflow uses a runner label that is not on the free list (larger, GPU, self-hosted or unknown runners could be billed), so the CI stays within GitHub's free tier.
 
 - CI only: the `macOS monthly report` workflow also writes its facts (fixed words and numbers) to `status.json` on the `macos-report` branch, so an automatic reviewer can read them without the GitHub API.
