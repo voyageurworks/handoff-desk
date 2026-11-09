@@ -1,6 +1,6 @@
 {
   "name": "@voyageurworks/handoff-desk",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "mcpName": "io.github.voyageurworks/handoff-desk",
   "description": "Hand tasks from Claude Code, Cursor or Codex to a personal agent that reads a folder of markdown notes.",
   "license": "MIT",

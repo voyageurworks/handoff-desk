@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.2.4 (2026-11-09)
 
 Additive only: the existing tools, their results and the note format are unchanged.
+
+**What was run.** The full suite (432 tests) on Linux and Windows, Node 22 and 24; macOS Intel (x64) jobs; real OpenClaw 2026.11.2 (`mcp add`, `mcp doctor --probe`, `mcp probe`) and Gemini CLI 0.67.0 (`install --write`, `mcp list`) in throwaway homes on Windows 11; four clean-room installs from the packed tarball. **Not run:** macOS on Apple silicon (arm64; GitHub assigned no runner), a live OpenClaw agent turn, the wake call against a real Gateway, Telegram and Slack against live accounts.
 
 - **OpenClaw as the agent.** New tools `handoff_pending` (the waiting items, with their requests) and `handoff_answer` (writes the reply under `## Reply`, sets `status:` and `answered:`, pushes when the desk syncs; a status line closes as `info`; a repeat changes nothing; a reply that looks like a secret is refused). They are for the answering side; a sender never calls them.
 - **Optional wake call** (`HANDOFF_OPENCLAW_WAKE_URL`, `HANDOFF_OPENCLAW_HOOK_TOKEN` or `..._COMMAND`, `HANDOFF_OPENCLAW_AGENT_ID`): after a send, one POST to an OpenClaw Gateway's `/hooks/wake`. OpenClaw treats a wake as a trusted notice, so it carries only the item number, its type and a fixed sentence; never the title or the request. The address must be `https://` (or `http://` to this computer) ending in `/wake`, without credentials or query; the token must be 8 to 512 visible characters and is never printed; a failed wake never fails the send. `handoff_send` shows it as `wake` and in `notified` (`openclaw`). `doctor` checks it and `doctor --ping` sends a test.
