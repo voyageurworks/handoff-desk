@@ -8,6 +8,7 @@ import { loadConfig, syncEnv } from "./config.js";
 import { clientEnv } from "./install.js";
 import { ringSlack, ringTelegram, validSlackWebhook, validTelegramChat, validTelegramToken } from "./notify.js";
 import { pendingCount } from "./outbox.js";
+import { validAgentId, validHookToken, wakeAgent, wakeUrl } from "./wake.js";
 import { detectSync } from "./sync.js";
 
 /**
@@ -111,7 +112,19 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorResu
   else if (s.webhook && !validSlackWebhook(s.webhook)) add("Slack", "fail", "HANDOFF_SLACK_WEBHOOK_URL must be a Slack incoming webhook (https://hooks.slack.com/services/...).");
   else add("Slack", "ok", s.webhook ? "Set." : "Set (webhook command not run).");
 
-  const any = mailParts.some(Boolean) || Boolean(t) || Boolean(s);
+  const w = config.wake;
+  if (!w) {
+    add("OpenClaw wake", "info", "Not set (optional; for an OpenClaw agent, see docs/openclaw.md).");
+  } else {
+    const missing = [!w.url && "HANDOFF_OPENCLAW_WAKE_URL", !w.token && !w.tokenCommand && "HANDOFF_OPENCLAW_HOOK_TOKEN (or HANDOFF_OPENCLAW_HOOK_TOKEN_COMMAND)"].filter(Boolean);
+    if (missing.length) add("OpenClaw wake", "warn", `Incomplete, missing ${missing.join(" and ")}.`);
+    else if (!wakeUrl(w.url!)) add("OpenClaw wake", "fail", "HANDOFF_OPENCLAW_WAKE_URL must be the Gateway's /hooks/wake address: https://..., or http://127.0.0.1:<port>/hooks/wake on the same computer.");
+    else if (w.token && !validHookToken(w.token)) add("OpenClaw wake", "fail", "HANDOFF_OPENCLAW_HOOK_TOKEN must be one run of visible characters, 8 to 512 long, with no spaces or line breaks.");
+    else if (w.agentId && !validAgentId(w.agentId)) add("OpenClaw wake", "fail", "HANDOFF_OPENCLAW_AGENT_ID may only use letters, digits, dots, dashes and underscores.");
+    else add("OpenClaw wake", "ok", w.token ? "Set." : "Set (token command not run).");
+  }
+
+  const any = mailParts.some(Boolean) || Boolean(t) || Boolean(s) || Boolean(w);
   add("Doorbells", any ? "info" : "warn", any ? "At least one is set." : "None set: nothing tells the agent a note is waiting, so it only sees notes when it looks at the desk.");
 
   const waiting = await pendingCount(config.outbox);
@@ -129,6 +142,10 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorResu
       const result = await ringSlack(s, item, settings, options.fetchImpl);
       add("Test message: Slack", result.rung ? "ok" : "fail", result.rung ? "Sent; look for it in the channel." : result.reason ?? "Not sent.");
     }
+  }
+  if (options.ping && w && !checks.some(check => check.name === "OpenClaw wake" && check.status !== "ok")) {
+    const result = await wakeAgent(w, { type: "status", id: 0, title: "doctor test", path: "Desk/doctor-test.md", request: "doctor test" }, { test: true }, options.fetchImpl);
+    add("Test message: OpenClaw", result.rung ? "ok" : "fail", result.rung ? "Sent; the Gateway accepted it (the agent may answer in its chat)." : result.reason ?? "Not sent.");
   }
   return finish(checks);
 }

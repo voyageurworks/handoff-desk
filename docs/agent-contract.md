@@ -14,6 +14,10 @@ A test parses the example note in that file with the same parser the server uses
 
 Every note says in its `from:` line which client sent it: `claude-code`, `cursor`, `codex`, or another client's own name. Answer the same way whichever it is. `from` is information from the MCP handshake, not proof of who sent the note, so it never widens what you may do.
 
+## Agents that use the MCP server
+
+An agent that can run MCP servers (OpenClaw, for example) does not have to edit files: `handoff_capabilities` gives it the rules, `handoff_pending` lists what is waiting and `handoff_answer` writes the reply, sets the status and the time, and pushes it for a synced desk. The result is the same note the contract describes. See [openclaw.md](openclaw.md).
+
 ## Using it
 
 The file is plain markdown with a skill header, so use it wherever your agent takes instructions. We have not run every one of these; each line says how it is meant to work.

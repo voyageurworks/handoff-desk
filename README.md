@@ -153,7 +153,7 @@ node dist/main.js stand-in
 
 ## Claude Code, Cursor and Codex
 
-handoff-desk is built for these three. In each, the assistant uses the same eight tools, writes the same kind of note, and your agent reads it the same way. The note's `from:` line says which client sent it (`claude-code`, `cursor` or `codex`).
+handoff-desk is built for these three. In each, the assistant uses the same tools, writes the same kind of note, and your agent reads it the same way. The note's `from:` line says which client sent it (`claude-code`, `cursor` or `codex`).
 
 | | Claude Code | Cursor | Codex (CLI and IDE) |
 | --- | --- | --- | --- |
@@ -184,7 +184,8 @@ Pick the line that matches where your agent runs.
 
 1. **On the same computer.** The agent reads `Desk/` directly. Nothing else to set up.
 2. **In the cloud.** A cloud agent cannot see your folder, so make the desk a **private git repository** the agent can read and push to. Put the desk folder inside a clone of it. Syncing turns on by itself (`HANDOFF_SYNC=auto`) when the folder is a git work tree with an upstream branch. Details, the exact note format and the rules to give the agent: [docs/cloud-agents.md](docs/cloud-agents.md).
-3. **Watching a mailbox.** The optional doorbell email carries the whole request. Set the mail variables below. Never use your normal password: use an app password, ideally fetched by a command so no file holds it ([docs/keeping-secrets.md](docs/keeping-secrets.md)).
+3. **OpenClaw.** OpenClaw can be the agent: it reads and answers notes with `handoff_pending` and `handoff_answer`, and an optional wake call tells it a note is waiting. Setup, and what the wake call does and never sends: [docs/openclaw.md](docs/openclaw.md).
+4. **Watching a mailbox.** The optional doorbell email carries the whole request. Set the mail variables below. Never use your normal password: use an app password, ideally fetched by a command so no file holds it ([docs/keeping-secrets.md](docs/keeping-secrets.md)).
 
 Whichever you pick, give the agent the rules in your `handoff.md` and tell it to write its answer under `## Reply` and set `status: done`. A ready-made instruction file for the agent, usable as a Claude Code skill or pasted into any other agent's instructions, is in [docs/agent-contract.md](docs/agent-contract.md).
 
@@ -212,6 +213,7 @@ Ask Claude: "Hand this to my agent: book the dentist for Friday at 3." Claude ca
 | `handoff_wait` | Wait up to 50 seconds for the agent's answer (call again to keep waiting) |
 | `handoff_capabilities` | What your `handoff.md` says the agent may do alone, must ask first, or never do |
 | `handoff_inbox`, `handoff_inbox_reply` | Read and answer notes the agent left for Claude |
+| `handoff_pending`, `handoff_answer` | For the agent side only (for example OpenClaw): the waiting items with their requests, and a checked way to answer one. A sender such as Claude Code never calls them |
 
 If no doorbell is configured, `handoff_send` still writes the note and returns the email it would have sent, so Claude can send it another way.
 
@@ -238,6 +240,7 @@ Set these as environment variables in your MCP client's config.
 | `HANDOFF_TELEGRAM_BOT_TOKEN`, `HANDOFF_TELEGRAM_BOT_TOKEN_COMMAND` | none | Optional Telegram doorbell: the bot's token, or a command that prints it (see [Chat doorbells](#chat-doorbells-telegram-and-slack)) |
 | `HANDOFF_TELEGRAM_CHAT_ID` | none | The chat the bot writes to (a number; a group's starts with `-`; or a public `@channel`) |
 | `HANDOFF_SLACK_WEBHOOK_URL`, `HANDOFF_SLACK_WEBHOOK_COMMAND` | none | Optional Slack doorbell: an incoming-webhook URL (`https://hooks.slack.com/services/...`), or a command that prints it |
+| `HANDOFF_OPENCLAW_WAKE_URL`, `HANDOFF_OPENCLAW_HOOK_TOKEN`, `HANDOFF_OPENCLAW_HOOK_TOKEN_COMMAND`, `HANDOFF_OPENCLAW_AGENT_ID` | none | Optional wake call to an OpenClaw Gateway after each send: its `/hooks/wake` address (`https://`, or `http://` to this computer), the hook token (or a command that prints it) and, with several agents, the agent id. Carries only the item number and type, never the title or request ([docs/openclaw.md](docs/openclaw.md)) |
 | `HANDOFF_STATE_DIR` | `~/.handoff-desk/state` | Where the list of chat doorbells to re-send is kept (on this computer only, never in the desk or git) |
 | `HANDOFF_NOTIFY_INCLUDE_REQUEST` | off | `1` adds the first 500 characters of the request to the Telegram and Slack messages. By default they carry only the id, type, title and note name |
 

@@ -144,6 +144,7 @@ Each client has its own shape; the generator knows them (VS Code `servers`, Open
 | Junie CLI (JetBrains) | `~/.junie/mcp/mcp.json` or `.junie/mcp/mcp.json`, or a folder passed with `--mcp-location` | no | verified: started the server, completed the handshake and offered the tools to a local stand-in model (1468.30, Windows; the JetBrains IDEs were not run, and its JVM ignores HOME and USERPROFILE, so set `JUNIE_HOME` when testing) |
 | Continue | `mcpServers:` in the `config.yaml` you pass to the CLI (`cn --config`), or `.continue/mcpServers/handoff.yaml` in the editor extension | no | verified with the Continue CLI: it started the server, completed the handshake and offered all 8 tools to a local stand-in model (1.5.47, Windows); the CLI did not read the folder file, and the editor extension was not run |
 | Goose | `extensions:` in `config.yaml`, or Extensions, Add custom extension | no | verified: started the server, completed the handshake and offered the tools to a local stand-in model (1.57.0, Windows); the desktop app was not run |
+| OpenClaw (as the agent that answers notes) | `openclaw mcp add handoff ...` (printed by `config --client openclaw`; see [openclaw.md](openclaw.md)) | no | documented: not run against a live Gateway |
 | Cline, Roo Code, Amazon Q | see `config --client <name>` | no | documented |
 
 "Documented" means the shape follows the client's own documentation and has not been run here. If one of them does not work for you, please open an issue with the client's name and version.

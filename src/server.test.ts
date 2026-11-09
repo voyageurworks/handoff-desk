@@ -86,10 +86,10 @@ describe("handoff server", () => {
     }
   });
 
-  it("lists exactly the eight tools", async () => {
+  it("lists exactly the ten tools", async () => {
     const { client } = await connect();
     const names = (await client.listTools()).tools.map(tool => tool.name).sort();
-    expect(names).toEqual(["handoff_capabilities", "handoff_inbox", "handoff_inbox_reply", "handoff_list", "handoff_read", "handoff_send", "handoff_status", "handoff_wait"]);
+    expect(names).toEqual(["handoff_answer", "handoff_capabilities", "handoff_inbox", "handoff_inbox_reply", "handoff_list", "handoff_pending", "handoff_read", "handoff_send", "handoff_status", "handoff_wait"]);
   });
 
   it("send without mail settings returns the email to send another way", async () => {

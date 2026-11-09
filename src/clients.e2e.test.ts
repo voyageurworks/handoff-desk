@@ -14,7 +14,7 @@ const blocks = (lang: string) =>
 
 const ENTRY_PLACEHOLDER = "/absolute/path/to/handoff-desk/dist/main.js";
 const DESK_PLACEHOLDER = "/absolute/path/to/your/desk";
-const TOOLS = ["handoff_capabilities", "handoff_inbox", "handoff_inbox_reply", "handoff_list", "handoff_read", "handoff_send", "handoff_status", "handoff_wait"];
+const TOOLS = ["handoff_answer", "handoff_capabilities", "handoff_inbox", "handoff_inbox_reply", "handoff_list", "handoff_pending", "handoff_read", "handoff_send", "handoff_status", "handoff_wait"];
 
 interface Launch { command: string; args: string[]; env: Record<string, string> }
 

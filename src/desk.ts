@@ -1,7 +1,7 @@
 import { lstat, mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { withLock } from "./lock.js";
-import { findSecret, localIso, nextId, noteFileName, noteId, parseNote, renderNote, safeTitle, type Item, type NoteType } from "./note.js";
+import { answerNote, findSecret, localIso, nextId, noteFileName, noteId, parseNote, renderNote, safeTitle, type AnswerStatus, type Item, type NoteType } from "./note.js";
 import { commitAndPush, git, pullRebase, PushFailedError, pushPending, READ_GIT_TIMEOUT_MS, type SyncHandle } from "./sync.js";
 
 /**
@@ -191,7 +191,26 @@ export function createDesk(config: DeskConfig) {
     return { item, answered: item.status !== "waiting", waitedMs: elapsed() };
   }
 
-  return {
+  /** The agent's answer to a waiting item: written into the note, then committed and pushed like any other desk change. */
+  async function answer(id: number, reply: string, status: AnswerStatus) {
+    const secret = findSecret(reply);
+    if (secret) throw new Error(`Refused: this reply looks like it contains ${secret}. Desk notes never hold passwords, codes or keys.`);
+    return desk.writeFiles(async () => {
+      const found = (await readAll()).filter(candidate => candidate.id === id).sort((a, b) => a.created.localeCompare(b.created) || a.file.localeCompare(b.file))[0];
+      if (!found) throw new Error(`No desk item #${id}.`);
+      if (found.status !== "waiting") return { files: [], message: "", result: { id, answered: false, status: found.status, note: found.status === "info" ? "This item is a status line; nothing to answer." : `Item #${id} is already ${found.status}; nothing was changed.` } };
+      const full = path.join(config.deskDir, found.file);
+      const info = await lstat(full);
+      // A link would let an answer be written into some other file.
+      if (info.isSymbolicLink() || info.nlink > 1) throw new Error(`Refused: ${found.file} is a symbolic or hard link, not a regular note file.`);
+      // A status line is passed on, not done: the contract's `info`.
+      const final: string = found.type === "status" && status === "done" ? "info" : status;
+      await writeFile(full, answerNote(await readFile(full, "utf8"), reply, final as AnswerStatus, localIso(now())), "utf8");
+      return { files: [full], message: `Handoff: answered ${id} (${final})`, result: { id, answered: true, status: final, note: `Item #${id} marked ${final}.` } };
+    });
+  }
+
+  const desk = {
     send,
     statusUpdate: (input: { title: string; line: string }) => send({ type: "status", title: input.title, request: input.line }),
     read,
@@ -213,6 +232,12 @@ export function createDesk(config: DeskConfig) {
      * they were, so a half-written note can't block later pulls. Without git it just runs the task under the lock.
      * `files` are absolute paths.
      */
+    /** Items still waiting, with the request text, for the agent that answers them (offline: this computer's copy, with a `stale` note). */
+    pending: () => serial(async (stale) => {
+      const items = (await readAll()).filter(item => item.status === "waiting").map(({ id, type, from, title, created, request, file }) => ({ id, type, from, title, created, request, path: `${folder}/${file}` }));
+      return stale ? { stale, items } : items;
+    }, { offlineOk: true }),
+    answer: (id: number, reply: string, status: AnswerStatus = "done") => answer(id, reply, status),
     writeFiles: <T extends object>(task: (root: string) => Promise<{ files: string[]; message: string; result: T }>, touches: string[] = []): Promise<T & { committed: boolean }> => {
       if (!sync) return withLock(rootDir, async () => ({ ...(await task(rootDir)).result, committed: false }));
       return serial(async () => {
@@ -245,4 +270,5 @@ export function createDesk(config: DeskConfig) {
       });
     },
   };
+  return desk;
 }

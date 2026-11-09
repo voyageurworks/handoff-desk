@@ -13,7 +13,7 @@ const jsonClients = ["claude-desktop", "cursor", "windsurf", "gemini-cli", "lm-s
 
 describe("the client table", () => {
   it("lists exactly the clients documented in the research, each with a where and an honest label", () => {
-    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "amp", "claude-code", "claude-desktop", "cline", "codex", "continue", "cursor", "gemini-cli", "goose", "jetbrains", "junie-cli", "kilo-code", "kiro", "lm-studio", "opencode", "roo-code", "vscode", "warp", "windsurf", "zed"]);
+    expect(CLIENTS.map(client => client.id).sort()).toEqual(["amazon-q", "amp", "claude-code", "claude-desktop", "cline", "codex", "continue", "cursor", "gemini-cli", "goose", "jetbrains", "junie-cli", "kilo-code", "kiro", "lm-studio", "openclaw", "opencode", "roo-code", "vscode", "warp", "windsurf", "zed"]);
     for (const client of CLIENTS) {
       expect(client.where.length, client.id).toBeGreaterThan(5);
       expect(["verified", "read", "documented"], client.id).toContain(client.evidence);
