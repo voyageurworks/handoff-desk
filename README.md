@@ -19,6 +19,14 @@
 
 ## Try it
 
+New here? One command asks who sends the notes and who answers them (an agent on this computer, OpenClaw or a cloud agent), creates the desk and prints every step with your folder filled in:
+
+```sh
+npx -y @voyageurworks/handoff-desk setup
+```
+
+Or paste [a ready-made prompt](docs/setup-prompt.md) into an AI assistant that can run commands and let it do the steps. For just a demo desk:
+
 ```sh
 npx -y @voyageurworks/handoff-desk init ~/handoff-demo
 ```

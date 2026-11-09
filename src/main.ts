@@ -7,10 +7,11 @@ import { formatDoctor, runDoctor } from "./doctor.js";
 import { initDesk, nextSteps } from "./init.js";
 import { INSTALLABLE, installClient } from "./install.js";
 import { buildServer, packageVersion } from "./server.js";
+import { setupCommand, terminalAsk } from "./setup.js";
 import { runStandIn } from "./standin.js";
 import { detectSync, ensureClone, git, type SyncHandle } from "./sync.js";
 
-const USAGE = "Usage: handoff-desk [--help | --version | init [dir] | stand-in [--once] [--git] | config --client <name> | config --list | install --client <name> | doctor]\n  (no argument)  start the MCP server on stdio\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)\n  install        add the server to a client's own settings file (dry run unless --write)\n  doctor         check the setup and say what to fix (--client <name> reads that client's settings; --ping sends a test message to Telegram and Slack)";
+const USAGE = "Usage: handoff-desk [--help | --version | setup | init [dir] | stand-in [--once] [--git] | config --client <name> | config --list | install --client <name> | doctor]\n  (no argument)  start the MCP server on stdio\n  setup          guided setup: asks who sends and who answers, creates the desk, prints every step (--prompt: a block to paste into an AI assistant)\n  init [dir]     create the desk folder and a handoff.md to edit (default: HANDOFF_DIR or ~/handoff)\n  stand-in       a stand-in agent that answers waiting items, for testing\n  config         print the settings block for an MCP client (--list shows the clients)\n  install        add the server to a client's own settings file (dry run unless --write)\n  doctor         check the setup and say what to fix (--client <name> reads that client's settings; --ping sends a test message to Telegram and Slack)";
 
 const [command, ...rest] = process.argv.slice(2);
 const config = loadConfig();
@@ -31,7 +32,7 @@ async function resolveSync(): Promise<SyncHandle | null> {
 if (command === "--help" || command === "-h" || command === "help") {
   console.log(`${USAGE}
 
-First time? Run: handoff-desk init   (it prints the exact next steps)
+First time? Run: handoff-desk setup   (it asks a few questions and prints every step)
 Docs: https://github.com/voyageurworks/handoff-desk#readme`);
 } else if (command === "--version" || command === "-v" || command === "version") {
   console.log(packageVersion);
@@ -42,6 +43,16 @@ Docs: https://github.com/voyageurworks/handoff-desk#readme`);
   const { created, kept } = await initDesk(dir, { inboxDir: config.inboxDir });
   const inRepo = await git(dir, ["rev-parse", "--is-inside-work-tree"]).then(() => true, () => false);
   console.log(`Desk folder: ${dir}\nCreated: ${created.join(", ") || "nothing"}\nKept as it was: ${kept.join(", ") || "nothing"}\n${nextSteps(dir, process.platform === "win32")}${inRepo ? "\nThis folder is in a git repository: keep that repository PRIVATE, because desk notes are pushed to its remote." : ""}`);
+} else if (command === "setup") {
+  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY) && !rest.includes("--help") && !rest.includes("--prompt");
+  const terminal = interactive ? await terminalAsk() : undefined;
+  try {
+    const result = await setupCommand(rest, { ask: terminal?.ask, interactive, defaultDir: config.dir });
+    (result.code === 0 ? console.log : console.error)(result.out);
+    process.exitCode = result.code;
+  } finally {
+    terminal?.close();
+  }
 } else if (command === "stand-in") {
   const deskDir = config.desk.deskDir;
   let sync: SyncHandle | undefined;

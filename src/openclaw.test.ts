@@ -177,8 +177,8 @@ describe("doctor and config for OpenClaw", () => {
     expect(await wakeCheck({})).toMatchObject({ status: "info" });
   });
   it("prints the openclaw mcp add command for POSIX and Windows", () => {
-    expect(configCommand(["--client", "openclaw", "--dir", "/home/dad/handoff"], "linux").out).toBe('openclaw mcp add handoff --command npx --arg -y --arg \'@voyageurworks/handoff-desk\' --env HANDOFF_DIR="/home/dad/handoff"\n');
-    expect(configCommand(["--client", "openclaw", "--dir", "C:/Users/dad/handoff"], "win32").out).toBe('openclaw mcp add handoff --command cmd --arg /c --arg npx --arg -y --arg \'@voyageurworks/handoff-desk\' --env HANDOFF_DIR="C:/Users/dad/handoff"\n');
+    expect(configCommand(["--client", "openclaw", "--dir", "/home/dad/handoff"], "linux").out).toBe('openclaw mcp add handoff --command npx --arg -y --arg \'@voyageurworks/handoff-desk\' --connect-timeout 60 --timeout 60 --env HANDOFF_DIR="/home/dad/handoff"\n');
+    expect(configCommand(["--client", "openclaw", "--dir", "C:/Users/dad/handoff"], "win32").out).toBe('openclaw mcp add handoff --command cmd --arg /c --arg npx --arg -y --arg \'@voyageurworks/handoff-desk\' --connect-timeout 60 --timeout 60 --env HANDOFF_DIR="C:/Users/dad/handoff"\n');
   });
 });
 
@@ -235,5 +235,21 @@ describe("review follow-ups", () => {
   it("keeps a note's own line ending when only some lines are CRLF", () => {
     const mixed = waiting().replace("status: waiting", "status: waiting\r");
     expect(answerNote(mixed, "ok", "done", "2031-02-03T05:00:00+00:00")).not.toContain("\r\n");
+  });
+});
+
+describe("tool hints", () => {
+  it("every tool says whether it only reads; none is destructive", async () => {
+    const { client } = await connect();
+    const tools = (await client.listTools()).tools;
+    expect(tools).toHaveLength(10);
+    const readOnly = tools.filter(tool => tool.annotations?.readOnlyHint).map(tool => tool.name).sort();
+    expect(readOnly).toEqual(["handoff_capabilities", "handoff_inbox", "handoff_list", "handoff_pending", "handoff_read", "handoff_wait"]);
+    for (const tool of tools) {
+      expect(tool.annotations?.title).toBeTruthy();
+      expect(tool.annotations?.destructiveHint).toBe(false);
+      expect(typeof tool.annotations?.readOnlyHint).toBe("boolean");
+    }
+    expect(tools.filter(tool => tool.annotations?.openWorldHint).map(tool => tool.name).sort()).toEqual(["handoff_send", "handoff_status"]);
   });
 });
