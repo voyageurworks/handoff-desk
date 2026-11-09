@@ -47,6 +47,14 @@ export const CLIENTS: ClientSpec[] = [
       ? `claude mcp add handoff -e HANDOFF_DIR="${options.dir}" '--' cmd /c npx -y '${PACKAGE}'\n`
       : `claude mcp add handoff -e HANDOFF_DIR="${options.dir}" -- npx -y ${PACKAGE}\n`,
   },
+  {
+    id: "openclaw", name: "OpenClaw (the agent that answers notes)", evidence: "documented",
+    where: "Run this command in a terminal on the computer that runs the OpenClaw Gateway, then `openclaw mcp doctor handoff --probe`. OpenClaw runs the server itself, so HANDOFF_DIR must be a folder on THAT computer (for a desk shared with another computer, a clone of the private repository: docs/cloud-agents.md). To expose only the answering tools, add --include 'handoff_pending,handoff_answer,handoff_capabilities'. See docs/openclaw.md.",
+    render: options => {
+      const { command, args } = launch(options);
+      return `openclaw mcp add handoff --command ${command} ${args.map(arg => `--arg ${arg.includes("@") ? `'${arg}'` : arg}`).join(" ")} --env HANDOFF_DIR="${options.dir}"\n`;
+    },
+  },
   { id: "claude-desktop", name: "Claude Desktop", evidence: "documented", where: "claude_desktop_config.json (Settings, Developer, Edit Config). Local servers only; restart the app.", render: under("mcpServers") },
   { id: "cursor", name: "Cursor", evidence: "documented", where: "~/.cursor/mcp.json for all projects, or .cursor/mcp.json in one project.", render: under("mcpServers"), install: { file: [".cursor", "mcp.json"], key: "mcpServers" } },
   {

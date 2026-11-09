@@ -5,6 +5,7 @@ import { parseEnv } from "node:util";
 import type { DoorbellConfig } from "./doorbell.js";
 import { loopbackEndpoint, type ChatConfig } from "./notify.js";
 import { outboxDir } from "./outbox.js";
+import type { WakeConfig } from "./wake.js";
 import type { Identity } from "./sync.js";
 
 export type SyncMode = "auto" | "git" | "off";
@@ -16,6 +17,8 @@ export type HandoffConfig = {
   chat: ChatConfig;
   /** Folder for the retry list of chat doorbells; on this computer only, outside the desk (see outbox.ts). */
   outbox: string;
+  /** Optional wake call to an OpenClaw Gateway (see wake.ts). Absent unless one of its settings is set. */
+  wake?: WakeConfig;
   mailDir: string;
   /** Folder (inside `dir`) where the agent leaves notes for Claude. */
   inboxDir: string;
@@ -86,6 +89,7 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): HandoffConf
       includeRequest: ["1", "true", "yes", "on"].includes((env.HANDOFF_NOTIFY_INCLUDE_REQUEST ?? "").toLowerCase()),
       ...testEndpoint(env.HANDOFF_CHAT_TEST_ENDPOINT),
     },
+    ...(env.HANDOFF_OPENCLAW_WAKE_URL || env.HANDOFF_OPENCLAW_HOOK_TOKEN || env.HANDOFF_OPENCLAW_HOOK_TOKEN_COMMAND ? { wake: { url: env.HANDOFF_OPENCLAW_WAKE_URL, token: env.HANDOFF_OPENCLAW_HOOK_TOKEN, tokenCommand: env.HANDOFF_OPENCLAW_HOOK_TOKEN_COMMAND, agentId: env.HANDOFF_OPENCLAW_AGENT_ID || undefined } } : {}),
     outbox: outboxDir(dir, env),
     mailDir: env.HANDOFF_MAIL_DIR ? expandHome(env.HANDOFF_MAIL_DIR) : path.join(dir, "mail"),
     inboxDir: env.HANDOFF_INBOX_DIR || "Inbox",

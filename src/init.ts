@@ -54,7 +54,7 @@ export function nextSteps(dir: string, windows: boolean): string {
   return [
     "Next steps:",
     `  1. Edit ${shown}/handoff.md: what your agent may do alone, must ask first, and must never do.`,
-    "  2. Add the server to Claude Code (other clients: npx -y @voyageurworks/handoff-desk config --list):",
+    "  2. Add the server to Claude Code (other clients, including OpenClaw: npx -y @voyageurworks/handoff-desk config --list):",
     `       ${add}`,
     "  3. Check the setup (doctor reads this terminal's settings, so it needs the folder too):",
     windows

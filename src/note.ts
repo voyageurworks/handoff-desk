@@ -108,3 +108,34 @@ export function findSecret(text: string): string | null {
   for (const [label, pattern] of SECRET_PATTERNS) if (pattern.test(text)) return label;
   return null;
 }
+
+export type AnswerStatus = "done" | "declined" | "info";
+
+/**
+ * Writes an agent's answer into a waiting note the way docs/agent-contract.md asks: the text under `## Reply`, `status:` set to
+ * done or declined, `answered:` set to the given ISO time. Line endings of the note are kept; nothing else in it changes.
+ */
+export function answerNote(text: string, reply: string, status: AnswerStatus, answeredIso: string): string {
+  // The note's own line ending, taken from its first line, so a hand-edited note is not rewritten line by line.
+  const eol = /^[^\n]*\r\n/.test(text.replace(/^﻿/, "")) ? "\r\n" : "\n";
+  const bom = text.startsWith("\uFEFF") ? "\uFEFF" : "";
+  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
+  const end = lines[0] === "---" ? lines.findIndex((line, index) => index > 0 && line === "---") : -1;
+  if (end < 0) throw new Error("This note has no front matter, so it cannot be answered.");
+  const setLine = (key: string, value: string) => {
+    const at = lines.findIndex((line, index) => index > 0 && index < end && new RegExp(`^${key}:`, "i").test(line));
+    if (at >= 0) lines[at] = `${key}: ${value}`;
+    else lines.splice(end, 0, `${key}: ${value}`);
+  };
+  setLine("status", status);
+  setLine("answered", answeredIso);
+  const body = reply.replace(/\r\n/g, "\n").trim();
+  if (!body) throw new Error("A reply cannot be empty.");
+  const heading = lines.findIndex((line, index) => index > end && line.trim().toLowerCase() === "## reply");
+  if (heading < 0) lines.push("", "## Reply", "", ...body.split("\n"));
+  else {
+    const existing = lines.slice(heading + 1).join("\n").trim();
+    lines.splice(heading + 1, lines.length, "", ...(existing ? [...existing.split("\n"), ""] : []), ...body.split("\n"));
+  }
+  return bom + lines.join(eol).replace(/\s*$/, "") + eol;
+}
