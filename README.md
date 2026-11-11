@@ -9,6 +9,7 @@
 [![Security](https://github.com/voyageurworks/handoff-desk/actions/workflows/security.yml/badge.svg)](https://github.com/voyageurworks/handoff-desk/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-339933.svg)](package.json)
+[![Claude Code: verified with mcp-proof](proof/badges/claude-code.svg)](proof/table.md)
 
 `handoff-desk` is a small [MCP](https://modelcontextprotocol.io) server that runs on your computer. When you tell Claude Code, Cursor, Codex or another MCP client to "hand this to my agent", it writes a markdown note into a folder you own, optionally emails the agent a heads-up, and later reads the agent's reply from the same note.
 
@@ -202,6 +203,7 @@ Whichever you pick, give the agent the rules in your `handoff.md` and tell it to
 | Agent | Status |
 | --- | --- |
 | Bundled stand-in (`stand-in` command) | Tested on every change |
+| Claude Code 2.1.322 | `verified` by [mcp-proof](https://github.com/voyageurworks/mcp-proof) 0.1.4 on 2026-11-11: the published 1.2.4, started by the real client in a throwaway home on Windows 11, answered the handshake and `tools/list` (record and badge in [proof/](proof/table.md)). Not a test of the tools themselves, and not run on macOS or Linux |
 | Operating systems and shells | Tests run on Linux and Windows on every change. macOS (Intel and Apple silicon) runs in a separate workflow on every pull request, but GitHub's macOS runners are sometimes unavailable, and then the check says macOS was not verified. The quick start runs under bash and zsh on Linux and macOS, and in Windows PowerShell 5.1 by hand |
 | Cursor, VS Code (Copilot), Claude Desktop, Codex | The config examples in [docs/clients.md](docs/clients.md) are launched by a test and complete an MCP handshake. The editors themselves are not run in CI |
 | Codex, Gemini CLI, Goose, Junie CLI, OpenCode, Kilo Code (CLI), Continue (CLI) | Started the server from the config `handoff-desk config` prints and showed it connected or completed the handshake, on Windows 11 (versions in [docs/clients.md](docs/clients.md#every-other-client)). Not re-run in CI, and not run on macOS or Linux |
@@ -314,6 +316,13 @@ pnpm test    # full suite, including an end-to-end test over real stdio
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Please read [SECURITY.md](SECURITY.md) before reporting a security problem, and follow the [code of conduct](CODE_OF_CONDUCT.md).
+
+## More from Voyageur Works
+
+Separate tools from the same studio; each works without the others.
+
+- [launch-guard-pack](https://github.com/voyageurworks/launch-guard-pack): check a private git repository, or the npm package you are about to publish, before it goes public, without printing what it finds.
+- [mcp-proof](https://github.com/voyageurworks/mcp-proof): prove an MCP server really starts in real clients, with dated, labelled evidence you can paste into a README.
 
 ## License
 
