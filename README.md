@@ -1,4 +1,4 @@
-<img src=".github/brand/banner.jpg" width="100%" alt="A canoe carrying a folded note across a dark lake, leaving a thin line of light behind it.">
+<img src=".github/brand/banner.jpg" width="100%" alt="A canoe loaded with a tied bundle of notes, leaving a lantern-lit dock at night.">
 
 <img src=".github/brand/icon.png" align="right" width="112" alt="handoff-desk icon">
 
